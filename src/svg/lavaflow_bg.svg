@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="192mm"
+   height="192mm"
+   viewBox="0 0 192 192"
+   version="1.1"
+   id="svg5"
+   inkscape:version="1.1.2 (0a00cf5339, 2022-02-04)"
+   sodipodi:docname="lavaflow_bg.svg"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview7"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:document-units="mm"
+     showgrid="false"
+     inkscape:zoom="1.6705506"
+     inkscape:cx="363.95186"
+     inkscape:cy="369.04"
+     inkscape:window-width="2623"
+     inkscape:window-height="1758"
+     inkscape:window-x="793"
+     inkscape:window-y="302"
+     inkscape:window-maximized="0"
+     inkscape:current-layer="layer1"
+     width="192mm" />
+  <defs
+     id="defs2" />
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1">
+    <rect
+       style="fill:#bc8f8f;stroke-width:26.4027;stroke-linecap:square;stroke-dashoffset:1133.77;-inkscape-stroke:none;stop-color:#000000"
+       id="rect866"
+       width="192"
+       height="192"
+       x="0"
+       y="0" />
+    <rect
+       style="fill:#a0522d;stroke-width:12.7215;stroke-linecap:square;stroke-dashoffset:1133.77;stop-color:#000000"
+       id="rect1100"
+       width="25.669777"
+       height="6.0799122"
+       x="1.830755"
+       y="51.256802"
+       transform="rotate(-29.031202)" />
+    <rect
+       style="fill:#a0522d;stroke-width:12.7215;stroke-linecap:square;stroke-dashoffset:1133.77;stop-color:#000000"
+       id="rect1226"
+       width="25.669777"
+       height="6.0799122"
+       x="38.757038"
+       y="100.83923"
+       transform="rotate(-29.031202)" />
+    <rect
+       style="fill:#a0522d;stroke-width:12.7215;stroke-linecap:square;stroke-dashoffset:1133.77;stop-color:#000000"
+       id="rect1228"
+       width="25.669777"
+       height="6.0799122"
+       x="-16.52272"
+       y="94.12748"
+       transform="rotate(-29.031202)" />
+    <rect
+       style="fill:#a0522d;stroke-width:12.7215;stroke-linecap:square;stroke-dashoffset:1133.77;stop-color:#000000"
+       id="rect1230"
+       width="25.669777"
+       height="6.0799122"
+       x="-37.289448"
+       y="135.24821"
+       transform="rotate(-29.031202)" />
+    <rect
+       style="fill:#a0522d;stroke-width:12.7215;stroke-linecap:square;stroke-dashoffset:1133.77;stop-color:#000000"
+       id="rect1232"
+       width="25.669777"
+       height="6.0799122"
+       x="15.00115"
+       y="144.37123"
+       transform="rotate(-29.031202)" />
+    <rect
+       style="fill:#a0522d;stroke-width:12.7215;stroke-linecap:square;stroke-dashoffset:1133.77;stop-color:#000000"
+       id="rect1234"
+       width="25.669777"
+       height="6.0799122"
+       x="-4.8138266"
+       y="184.30321"
+       transform="rotate(-29.031202)" />
+    <rect
+       style="fill:#a0522d;stroke-width:12.7215;stroke-linecap:square;stroke-dashoffset:1133.77;stop-color:#000000"
+       id="rect1236"
+       width="25.669777"
+       height="6.0799122"
+       x="95.579201"
+       y="100.95206"
+       transform="rotate(-29.031202)" />
+    <rect
+       style="fill:#a0522d;stroke-width:12.7215;stroke-linecap:square;stroke-dashoffset:1133.77;stop-color:#000000"
+       id="rect1238"
+       width="25.669777"
+       height="6.0799122"
+       x="71.823311"
+       y="144.48405"
+       transform="rotate(-29.031202)" />
+    <rect
+       style="fill:#a0522d;stroke-width:12.7215;stroke-linecap:square;stroke-dashoffset:1133.77;stop-color:#000000"
+       id="rect1240"
+       width="25.669777"
+       height="6.0799122"
+       x="52.008335"
+       y="184.41603"
+       transform="rotate(-29.031202)" />
+  </g>
+</svg>

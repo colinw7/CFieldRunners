@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="192mm"
+   height="192mm"
+   viewBox="0 0 192 192"
+   version="1.1"
+   id="svg5"
+   inkscape:version="1.1.2 (0a00cf5339, 2022-02-04)"
+   sodipodi:docname="glue_price.svg"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview7"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:document-units="mm"
+     showgrid="false"
+     inkscape:zoom="2.0978608"
+     inkscape:cx="355.60033"
+     inkscape:cy="292.44076"
+     inkscape:window-width="2871"
+     inkscape:window-height="2024"
+     inkscape:window-x="624"
+     inkscape:window-y="103"
+     inkscape:window-maximized="0"
+     inkscape:current-layer="layer1"
+     width="192mm" />
+  <defs
+     id="defs2" />
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1">
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-weight:normal;font-size:62.1278px;font-family:sans-serif;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1.5532"
+       x="57.499241"
+       y="186.53568"
+       id="text2512"
+       transform="scale(1.0705579,0.9340924)"><tspan
+         sodipodi:role="line"
+         id="tspan2510"
+         style="stroke-width:1.5532"
+         x="57.499241"
+         y="186.53568">$10</tspan></text>
+    <path
+       style="fill:#aad400;stroke:#000000;stroke-width:0.264583px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       d="m 26.497414,50.260915 c 0,0 17.729357,-24.656449 16.312499,-33.755906 -0.772717,-4.96261 -4.669764,-7.7539281 -8.21507,-8.2131804 -5.836772,-0.7560853 -10.966591,-0.8573172 -12.65398,8.5619334 -1.598001,8.920081 4.556551,33.407153 4.556551,33.407153 z"
+       id="path2854"
+       sodipodi:nodetypes="csssc" />
+    <path
+       style="font-variation-settings:normal;opacity:1;vector-effect:none;fill:#aad400;fill-opacity:1;stroke:#000000;stroke-width:0.264583px;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;-inkscape-stroke:none;stop-color:#000000;stop-opacity:1"
+       d="m 20.122107,143.75152 c 0,-1.44137 5.760561,-46.069132 9.171327,-64.419886 C 32.7042,60.98088 45.843239,36.04813 57.7996,24.78752 69.755962,13.526911 89.591522,0.63793097 91.560061,9.6434639 c 1.96854,9.0055331 -21.22723,30.2244501 -21.22723,30.2244501 0,0 16.418113,-8.468044 31.024079,-11.076652 20.60236,-3.679556 37.13572,-7.144732 45.73206,0.210819 7.90843,6.766932 0.8834,14.016655 -7.88259,19.643574 -7.83836,5.031471 -24.86928,10.825629 -24.86928,10.825629 0,0 15.54191,-1.51071 24.1099,-0.979475 8.56798,0.531235 12.71631,4.073902 11.8441,9.106213 -1.72562,9.95611 -28.34932,10.110303 -28.34932,10.110303 0,0 14.91092,1.638665 21.61833,4.116238 6.70741,2.477574 13.21065,8.994721 12.38205,16.871916 -1.27156,12.088211 -11.59194,11.489691 -20.54835,11.870091 -8.95641,0.3804 -37.138282,-12.890361 -53.768543,-7.73898 -22.629986,7.00985 -31.748336,22.2376 -50.031456,48.41843 -1.013026,1.45061 -11.471704,-7.4945 -11.471704,-7.4945 z"
+       id="path938"
+       sodipodi:nodetypes="czzscsssczsczszssc" />
+    <rect
+       style="font-variation-settings:normal;opacity:1;vector-effect:none;fill:#696969;fill-opacity:1;stroke:#000000;stroke-width:0.264583px;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;-inkscape-stroke:none;stop-color:#000000;stop-opacity:1"
+       id="rect4556"
+       width="20.117966"
+       height="20.05777"
+       x="-136.89191"
+       y="78.200287"
+       transform="rotate(-63.672211)" />
+    <rect
+       style="font-variation-settings:normal;opacity:1;vector-effect:none;fill:#808080;fill-opacity:1;stroke:#000000;stroke-width:0.264583px;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;-inkscape-stroke:none;stop-color:#000000;stop-opacity:1"
+       id="rect4682"
+       width="26.048801"
+       height="16.501438"
+       x="79.584023"
+       y="116.08501"
+       transform="rotate(28.047916)" />
+  </g>
+</svg>

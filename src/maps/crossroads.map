@@ -1,0 +1,32 @@
+# name=value
+nc=23
+nr=16
+bgcolor=100,100,100
+bg=crossroads
+border=crossroads
+
+# char,type,subtype,direction,function
+B,border,none
+.,empty,none
+E,empty,none,none,entrance,1
+e,empty,none,none,exit,1
+F,empty,none,none,entrance,2
+f,empty,none,none,exit,2
+a,empty,none,none,epath
+
+BBBBBBBBBBBBBBBBBBBBBBB
+BBBBBBBBBBBFBBBBBBBBBBB
+BBBBBBBBBBBaBBBBBBBBBBB
+BB.........a.........BB
+BB...................BB
+BB...................BB
+BB...................BB
+BB...................BB
+Eaa.................aae
+BB...................BB
+BB...................BB
+BB...................BB
+BB...................BB
+BB.........a.........BB
+BBBBBBBBBBBaBBBBBBBBBBB
+BBBBBBBBBBBfBBBBBBBBBBB

@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="210mm"
+   height="297mm"
+   viewBox="0 0 210 297"
+   version="1.1"
+   id="svg5"
+   inkscape:version="1.1.2 (0a00cf5339, 2022-02-04)"
+   sodipodi:docname="train.svg"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview7"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:document-units="mm"
+     showgrid="false"
+     inkscape:zoom="1.0489304"
+     inkscape:cx="376.0974"
+     inkscape:cy="602.04185"
+     inkscape:window-width="3388"
+     inkscape:window-height="1850"
+     inkscape:window-x="949"
+     inkscape:window-y="266"
+     inkscape:window-maximized="0"
+     inkscape:current-layer="layer1" />
+  <defs
+     id="defs2" />
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1">
+    <path
+       id="rect6368"
+       style="fill:#d45500;stroke-width:23.8587;stroke-linecap:square;stroke-dashoffset:1133.77;stop-color:#000000"
+       d="m 14.275822,121.08324 h 98.824248 v 46.50958 H 14.275822 Z" />
+    <path
+       id="rect6370"
+       style="fill:#d38d5f;stroke-width:26.4563;stroke-linecap:square;stroke-dashoffset:1133.77;stop-color:#000000"
+       d="m 116.3221,137.86501 h 81.88589 v 29.70266 H 116.3221 Z" />
+    <path
+       id="rect6372"
+       style="fill:#d38d5f;stroke-width:21.7501;stroke-linecap:square;stroke-dashoffset:1133.77;stop-color:#000000"
+       d="m 116.3221,106.86285 23.99107,-0.17334 4.29909,31.29932 H 116.3221 Z"
+       sodipodi:nodetypes="ccccc" />
+    <path
+       id="rect6476"
+       style="fill:#e9c6af;stroke-width:34.6773;stroke-linecap:square;stroke-dashoffset:1133.77;stop-color:#000000"
+       d="m 172.278,138.49586 h 15.80944 l 5.43147,-52.012494 -30.17835,0.206377 z"
+       sodipodi:nodetypes="ccccc" />
+    <path
+       id="rect6580"
+       style="fill:#808080;stroke-width:26.4563;stroke-linecap:square;stroke-dashoffset:1133.77;stop-color:#000000"
+       d="m 29.120573,167.84512 h 69.876015 v 28.27955 H 29.120573 Z" />
+    <path
+       id="rect6582"
+       style="fill:#808080;stroke-width:22.4453;stroke-linecap:square;stroke-dashoffset:1133.77;stop-color:#000000"
+       d="m 131.44098,167.71146 h 46.32128 v 30.70514 h -46.32128 z" />
+    <path
+       id="path952"
+       style="fill:#f2f2f2;stroke-width:26.4563;stroke-linecap:square;stroke-dashoffset:1133.77;stop-color:#000000"
+       d="M 61.20726,194.24353 A 24.616261,23.263126 0 0 1 36.591,217.50666 24.616261,23.263126 0 0 1 11.974739,194.24353 24.616261,23.263126 0 0 1 36.591,170.9804 24.616261,23.263126 0 0 1 61.20726,194.24353 Z" />
+    <path
+       id="ellipse954"
+       style="fill:#f2f2f2;stroke-width:26.4563;stroke-linecap:square;stroke-dashoffset:1133.77;stop-color:#000000"
+       d="M 115.783,194.27475 A 24.616261,23.263126 0 0 1 91.16674,217.53788 24.616261,23.263126 0 0 1 66.55048,194.27475 24.616261,23.263126 0 0 1 91.16674,171.01162 24.616261,23.263126 0 0 1 115.783,194.27475 Z" />
+    <path
+       id="ellipse1036"
+       style="fill:#f2f2f2;stroke-width:15.8284;stroke-linecap:square;stroke-dashoffset:1133.77;stop-color:#000000"
+       d="m 154.13959,203.27031 a 15.633667,13.111331 0 0 1 -15.63367,13.11133 15.633667,13.111331 0 0 1 -15.63367,-13.11133 15.633667,13.111331 0 0 1 15.63367,-13.11133 15.633667,13.111331 0 0 1 15.63367,13.11133 z" />
+    <path
+       id="ellipse6344"
+       style="fill:#f2f2f2;stroke-width:15.8284;stroke-linecap:square;stroke-dashoffset:1133.77;stop-color:#000000"
+       d="m 189.34087,204.68932 a 15.633667,13.111331 0 0 1 -15.63367,13.11133 15.633667,13.111331 0 0 1 -15.63367,-13.11133 15.633667,13.111331 0 0 1 15.63367,-13.11134 15.633667,13.111331 0 0 1 15.63367,13.11134 z" />
+  </g>
+</svg>

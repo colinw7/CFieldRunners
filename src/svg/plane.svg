@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="210mm"
+   height="297mm"
+   viewBox="0 0 210 297"
+   version="1.1"
+   id="svg5"
+   inkscape:version="1.1.2 (0a00cf5339, 2022-02-04)"
+   sodipodi:docname="plane.svg"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview7"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:document-units="mm"
+     showgrid="false"
+     inkscape:zoom="1.0489304"
+     inkscape:cx="389.44433"
+     inkscape:cy="602.04185"
+     inkscape:window-width="3388"
+     inkscape:window-height="1850"
+     inkscape:window-x="126"
+     inkscape:window-y="66"
+     inkscape:window-maximized="0"
+     inkscape:current-layer="layer1" />
+  <defs
+     id="defs2" />
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1">
+    <path
+       id="rect1006"
+       style="fill:#668000;stroke-width:26.4563;stroke-linecap:square;stroke-dashoffset:299.977;stop-color:#000000"
+       d="m 180.17182,104.38535 30.90476,3.58794 L 76.660786,253.7969 31.1582,247.45604 Z"
+       sodipodi:nodetypes="ccccc" />
+    <path
+       id="rect1222"
+       style="fill:#445500;stroke-width:99.9923;stroke-linecap:square;stroke-dashoffset:299.977;stop-color:#000000"
+       d="M 173.13867 375.08984 A 80.252005 106.60899 0 0 0 93.371094 470.625 L 92.623047 470.45898 L 76.574219 609.16016 L 705.85742 734.23438 L 706.01562 732.82422 A 52.613004 62.771229 0 0 0 707.90625 732.9043 A 52.613004 62.771229 0 0 0 760.51953 670.13281 A 52.613004 62.771229 0 0 0 710.08789 607.41992 L 251.30859 505.65625 A 80.252005 106.60899 0 0 0 253.39062 481.69922 A 80.252005 106.60899 0 0 0 173.13867 375.08984 z "
+       transform="scale(0.26458333)" />
+    <ellipse
+       style="fill:#48d1cc;stroke-width:26.4563;stroke-linecap:square;stroke-dashoffset:299.977;-inkscape-stroke:none;stop-color:#000000"
+       id="path2205"
+       cx="133.20229"
+       cy="150.43744"
+       rx="18.96633"
+       ry="9.0029078" />
+    <path
+       id="rect924"
+       style="fill:#668000;stroke-width:26.4563;stroke-linecap:square;stroke-dashoffset:299.977;stop-color:#000000"
+       d="m 153.61473,80.100289 29.4758,5.447686 L 58.773123,209.90462 13.328319,202.06018 Z"
+       sodipodi:nodetypes="ccccc" />
+  </g>
+</svg>
