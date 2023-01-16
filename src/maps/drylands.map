@@ -6,7 +6,8 @@ bg=drylands
 border=drylands
 
 # char,type,subtype,direction,function,id
-B,border,none
+B,border,none,none,none,0
+C,border,none,none,none,1
 .,empty,none
 E,empty,none,none,entrance,1
 e,empty,none,none,exit,1
@@ -20,15 +21,15 @@ BBBBBBBBBBBGBBBBBBBBBBB
 BBBBBBBBBBBaBBBBBBBBBBB
 BBBBBBBBBBBaBBBBBBBBBBB
 Eaa........a........aae
-BB...................BB
-BB...................BB
-BB...................BB
-BB...................BB
-BB...................BB
-BB...................BB
-BB...................BB
-BB...................BB
-BB...................BB
+CC...................CC
+CC...................CC
+CC...................CC
+CC...................CC
+CC...................CC
+CC...................CC
+CC...................CC
+CC...................CC
+CC...................CC
 Faa........a........aaf
 BBBBBBBBBBBaBBBBBBBBBBB
 BBBBBBBBBBBgBBBBBBBBBBB

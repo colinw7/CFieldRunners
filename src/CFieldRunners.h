@@ -161,7 +161,8 @@ class CFieldRunners {
     FROSTBITE,
     DRYLANDS,
     LAVAFLOW,
-    SKYWAY
+    SKYWAY,
+    MUDSLIDE
   };
 
   // border type
@@ -174,7 +175,8 @@ class CFieldRunners {
     FROSTBITE,
     DRYLANDS,
     LAVAFLOW,
-    SKYWAY
+    SKYWAY,
+    MUDSLIDE
   };
 
   // cell type
@@ -191,10 +193,11 @@ class CFieldRunners {
     GLUE     = WEAPON_CELL + 2,
     SNOWBOMB = WEAPON_CELL + 3,
     MISSILE  = WEAPON_CELL + 4,
-    ZAP      = WEAPON_CELL + 5,
-    PULSE    = WEAPON_CELL + 6,
-    LASER    = WEAPON_CELL + 7,
-    FIREBOMB = WEAPON_CELL + 8
+    SHOTGUN  = WEAPON_CELL + 5,
+    ZAP      = WEAPON_CELL + 6,
+    PULSE    = WEAPON_CELL + 7,
+    LASER    = WEAPON_CELL + 8,
+    FIREBOMB = WEAPON_CELL + 9
   };
 
   // cell sub type
@@ -252,9 +255,7 @@ class CFieldRunners {
   };
 
  public:
-  //! Base Class for Individual Cell on the Field Grid
-  //! (Virtual - derive from this for different types of cells)
-  class Cell : public CAStar<CellPos>::Node {
+  class Cell {
    public:
     Cell(CFieldRunners *fieldRunners, const CellPos &pos);
 
@@ -262,10 +263,29 @@ class CFieldRunners {
 
     CFieldRunners *fieldRunners() const { return fieldRunners_; }
 
+    // get/set current position
     void setPos(const CellPos &pos) { pos_ = pos; }
     const CellPos &getPos() const { return pos_; }
 
-    //! boundary box (get/set)
+    bool isSelected() const { return selected_; }
+    void setSelected(bool b) { selected_ = b; }
+
+   private:
+    CFieldRunners *fieldRunners_ { nullptr };
+
+    CellPos pos_;
+    bool    selected_ { false };
+  };
+
+  //! Base Class for Individual Cell on the Field Grid
+  //! (Virtual - derive from this for different types of cells)
+  class FieldCell : public Cell, public CAStar<CellPos>::Node {
+   public:
+    FieldCell(CFieldRunners *fieldRunners, const CellPos &pos);
+
+    virtual ~FieldCell() { }
+
+    //! boundary box in pixels (get/set)
     void setBBox(const BBox &bbox) { bbox_ = bbox; }
     void getBBox(BBox &bbox) const { bbox = bbox_; }
 
@@ -313,37 +333,27 @@ class CFieldRunners {
       return true;
     }
 
-    //! buy price
-    virtual int getBuyPrice() { return 0; }
-
-    //! sell price
-    virtual int getSellPrice() { return 0; }
-
-    // get damage
-    virtual int getDamage() const { return damage_; }
-
     //! update state
     virtual void update() { }
 
     //! draw
     virtual void draw() { }
 
-   protected:
-    CFieldRunners *fieldRunners_;
+    //! draw selected
+    virtual void drawSelected() { }
 
-    CellPos  pos_;
+   protected:
     BBox     bbox_;
     CellData cellData_;
-    int      damage_ { 0 };
   };
 
   //---
 
   //! Basic Empty Cell
-  class EmptyCell : public Cell {
+  class EmptyCell : public FieldCell {
    public:
     EmptyCell(CFieldRunners *fieldRunners, const CellPos &pos) :
-     Cell(fieldRunners, pos) {
+     FieldCell(fieldRunners, pos) {
     }
 
     // not solid
@@ -353,10 +363,10 @@ class CFieldRunners {
   //---
 
   //! Border Cell
-  class BorderCell : public Cell {
+  class BorderCell : public FieldCell {
    public:
     BorderCell(CFieldRunners *fieldRunners, const CellPos &pos) :
-     Cell(fieldRunners, pos) {
+     FieldCell(fieldRunners, pos) {
     }
 
     // solid (can't walk through)
@@ -366,10 +376,10 @@ class CFieldRunners {
   //---
 
   //! Block Cell
-  class BlockCell : public Cell {
+  class BlockCell : public FieldCell {
    public:
     BlockCell(CFieldRunners *fieldRunners, const CellPos &pos) :
-     Cell(fieldRunners, pos) {
+     FieldCell(fieldRunners, pos) {
     }
 
     // solid (can't walk through)
@@ -394,144 +404,173 @@ class CFieldRunners {
 
   //---
 
-  //! Basic Gun Cell
-  class GunCell : public Cell {
+  //! Weapon Cell
+  class WeaponCell : public FieldCell {
+   public:
+    WeaponCell(CFieldRunners *fieldRunners, const CellPos &pos);
+
+    Orient orient() const { return orient_; }
+    void setOrient(Orient orient) { orient_ = orient; }
+
+    // solid (can't walk through)
+    bool isSolid() const override { return true; }
+
+    bool isWeapon() const override { return true; }
+
+    //! buy price
+    virtual int getBuyPrice() const = 0;
+
+    //! sell price
+    virtual int getSellPrice() const = 0;
+
+    // get damage weapon makes on hit
+    virtual int getDamage() const = 0;
+
+    //! range (how close to detect/shoot)
+    virtual int getRange() const = 0;
+
+    //--
+
+    int level() const { return level_; }
+    void setLevel(int i) { level_ = i; }
+
+    //---
+
+    Orient deltaToOrient(int dx, int dy) const;
+
+    void setNewOrient(Orient newOrient);
+
+   private:
+    Orient orient_ { ORIENT_NONE };
+    int    damage_ { 0 };
+    int    level_  { 1 };
+  };
+
+  //---
+
+  //! Gun Weapon Cell
+  class GunCell : public WeaponCell {
    public:
     static int buyPrice() { return 5; }
 
     GunCell(CFieldRunners *fieldRunners, const CellPos &pos);
 
-    Orient orient() const { return orient_; }
-
-    // solid (can't walk through)
-    bool isSolid() const override { return true; }
-
-    bool isWeapon() const override { return true; }
-
     //! buy price
-    int getBuyPrice() override { return buyPrice(); }
+    int getBuyPrice() const override { return buyPrice(); }
 
     //! sell price
-    int getSellPrice() override { return 3; }
+    int getSellPrice() const override { return 3; }
+
+    // get damage weapon makes on hit
+    int getDamage() const override {
+      if (level() == 2) return 10;
+      if (level() == 3) return 15;
+      return 5;
+    }
 
     //! range (how close to detect/shoot)
-    int getRange() const { return 2; }
+    int getRange() const override { return 2; }
 
     // update gun
     void update() override;
 
-    // draw block
+    // draw gun
     void draw() override;
 
    private:
-    Orient orient_ { ORIENT_NONE };
-
     static ImageId images_[8];    //! images for gun (rotate 0-315 by 45)
     static bool    imagesLoaded_; //! are images loaded ?
   };
 
   //---
 
-  //! Glue Gun Cell
-  class GlueCell : public Cell {
+  //! Glue Weapon Cell
+  class GlueCell : public WeaponCell {
    public:
     static int buyPrice() { return 10; }
 
     GlueCell(CFieldRunners *fieldRunners, const CellPos &pos);
 
-    Orient orient() const { return orient_; }
-
-    // solid (can't walk through)
-    bool isSolid() const override { return true; }
-
-    bool isWeapon() const override { return true; }
-
     //! buy price
-    int getBuyPrice() override { return buyPrice(); }
+    int getBuyPrice() const override { return buyPrice(); }
 
     //! sell price
-    int getSellPrice() override { return 7; }
+    int getSellPrice() const override { return 7; }
+
+    // get damage weapon makes on hit
+    int getDamage() const override { return 10; }
 
     //! range (how close to detect/shoot)
-    int getRange() const { return 2; }
+    int getRange() const override { return 3; }
 
-    // update gun
+    // update glue
     void update() override;
 
-    // draw block
+    // draw glue
     void draw() override;
 
    private:
-    Orient orient_ { ORIENT_NONE };
-
     static ImageId images_[8];    //! images for gun (rotate 0-315 by 45)
     static bool    imagesLoaded_; //! are images loaded ?
   };
 
   //---
 
-  //! Snowbomb Gun Cell
-  class SnowbombCell : public Cell {
+  //! Snowbomb Weapon Cell
+  class SnowbombCell : public WeaponCell {
    public:
     static int buyPrice() { return 10; }
 
     SnowbombCell(CFieldRunners *fieldRunners, const CellPos &pos);
 
-    // solid (can't walk through)
-    bool isSolid() const override { return true; }
-
-    bool isWeapon() const override { return true; }
-
     //! buy price
-    int getBuyPrice() override { return buyPrice(); }
+    int getBuyPrice() const override { return buyPrice(); }
 
     //! sell price
-    int getSellPrice() override { return 7; }
+    int getSellPrice() const override { return 7; }
+
+    // get damage weapon makes on hit
+    int getDamage() const override { return 10; }
 
     //! range (how close to detect/shoot)
-    int getRange() const { return 2; }
+    int getRange() const override { return 3; }
 
-    // update gun
+    // update snowbomb
     void update() override;
 
-    // draw block
+    // draw snowbomb
     void draw() override;
   };
 
   //---
 
-  //! Missile Gun Cell
-  class MissileCell : public Cell {
+  //! Missile Weapon Cell
+  class MissileCell : public WeaponCell {
    public:
     static int buyPrice() { return 20; }
 
     MissileCell(CFieldRunners *fieldRunners, const CellPos &pos);
 
-    Orient orient() const { return orient_; }
-
-    // solid (can't walk through)
-    bool isSolid() const override { return true; }
-
-    bool isWeapon() const override { return true; }
-
     //! buy price
-    int getBuyPrice() override { return buyPrice(); }
+    int getBuyPrice() const override { return buyPrice(); }
 
     //! sell price
-    int getSellPrice() override { return 15; }
+    int getSellPrice() const override { return 15; }
+
+    // get damage weapon makes on hit
+    int getDamage() const override { return 10; }
 
     //! range (how close to detect/shoot)
-    int getRange() const { return 2; }
+    int getRange() const override { return 3; }
 
-    // update gun
+    // update missile
     void update() override;
 
-    // draw block
+    // draw missile
     void draw() override;
 
    private:
-    Orient orient_ { ORIENT_NONE };
-    int    reload_ { 0 };
+    int reload_ { 0 };
 
     static ImageId images_[8];    //! images for gun (rotate 0-315 by 45)
     static bool    imagesLoaded_; //! are images loaded ?
@@ -539,31 +578,57 @@ class CFieldRunners {
 
   //---
 
-  //! Zap Gun Cell
-  class ZapCell : public Cell {
+  //! Shotgun Weapon Cell
+  class ShotgunCell : public WeaponCell {
+   public:
+    static int buyPrice() { return 50; }
+
+    ShotgunCell(CFieldRunners *fieldRunners, const CellPos &pos);
+
+    //! buy price
+    int getBuyPrice() const override { return buyPrice(); }
+
+    //! sell price
+    int getSellPrice() const override { return 50; }
+
+    // get damage weapon makes on hit
+    int getDamage() const override { return 15; }
+
+    //! range (how close to detect/shoot)
+    int getRange() const override { return 3; }
+
+    // update shotgun
+    void update() override;
+
+    // draw shotgun
+    void draw() override;
+  };
+
+  //---
+
+  //! Zap Weapon Cell
+  class ZapCell : public WeaponCell {
    public:
     static int buyPrice() { return 70; }
 
     ZapCell(CFieldRunners *fieldRunners, const CellPos &pos);
 
-    // solid (can't walk through)
-    bool isSolid() const override { return true; }
-
-    bool isWeapon() const override { return true; }
-
     //! buy price
-    int getBuyPrice() override { return buyPrice(); }
+    int getBuyPrice() const override { return buyPrice(); }
 
     //! sell price
-    int getSellPrice() override { return 50; }
+    int getSellPrice() const override { return 50; }
+
+    // get damage weapon makes on hit
+    int getDamage() const override { return 20; }
 
     //! range (how close to detect/shoot)
-    int getRange() const { return 2; }
+    int getRange() const override { return 3; }
 
-    // update gun
+    // update zap
     void update() override;
 
-    // draw block
+    // draw zap
     void draw() override;
 
    private:
@@ -573,91 +638,88 @@ class CFieldRunners {
 
   //---
 
-  //! Pulse Gun Cell
-  class PulseCell : public Cell {
+  //! Pulse Weapon Cell
+  class PulseCell : public WeaponCell {
    public:
     static int buyPrice() { return 70; }
 
     PulseCell(CFieldRunners *fieldRunners, const CellPos &pos);
 
-    // solid (can't walk through)
-    bool isSolid() const override { return true; }
-
-    bool isWeapon() const override { return true; }
-
     //! buy price
-    int getBuyPrice() override { return buyPrice(); }
+    int getBuyPrice() const override { return buyPrice(); }
 
     //! sell price
-    int getSellPrice() override { return 50; }
+    int getSellPrice() const override { return 50; }
+
+    // get damage weapon makes on hit
+    int getDamage() const override { return 15; }
 
     //! range (how close to detect/shoot)
-    int getRange() const { return 2; }
+    int getRange() const override { return 3; }
 
-    // update gun
+    // update pulse
     void update() override;
 
-    // draw block
+    // draw pulse
     void draw() override;
+
+   private:
+    int reload_ { 0 };
   };
 
   //---
 
-  //! Laser Gun Cell
-  class LaserCell : public Cell {
+  //! Laser Weapon Cell
+  class LaserCell : public WeaponCell {
    public:
     static int buyPrice() { return 70; }
 
     LaserCell(CFieldRunners *fieldRunners, const CellPos &pos);
 
-    // solid (can't walk through)
-    bool isSolid() const override { return true; }
-
-    bool isWeapon() const override { return true; }
-
     //! buy price
-    int getBuyPrice() override { return buyPrice(); }
+    int getBuyPrice() const override { return buyPrice(); }
 
     //! sell price
-    int getSellPrice() override { return 50; }
+    int getSellPrice() const override { return 50; }
+
+    // get damage weapon makes on hit
+    int getDamage() const override { return 15; }
 
     //! range (how close to detect/shoot)
-    int getRange() const { return 2; }
+    int getRange() const override { return 3; }
 
-    // update gun
+    // update laser
     void update() override;
 
-    // draw block
+    // draw laser
     void draw() override;
   };
 
   //---
 
-  //! Firebomb Gun Cell
-  class FirebombCell : public Cell {
+  //! Firebomb Weapon Cell
+  class FirebombCell : public WeaponCell {
    public:
     static int buyPrice() { return 70; }
 
     FirebombCell(CFieldRunners *fieldRunners, const CellPos &pos);
 
-    // solid (can't walk through)
-    bool isSolid() const override { return true; }
-
-    bool isWeapon() const override { return true; }
-
     //! buy price
-    int getBuyPrice() override { return buyPrice(); }
+    int getBuyPrice() const override { return buyPrice(); }
 
     //! sell price
-    int getSellPrice() override { return 50; }
+    int getSellPrice() const override { return 50; }
+
+    // get damage weapon makes on hit
+    int getDamage() const override { return 25; }
 
     //! range (how close to detect/shoot)
-    int getRange() const { return 2; }
+    int getRange() const override { return 3; }
 
     // update gun
     void update() override;
 
-    // draw block
+    // draw firebomb
     void draw() override;
   };
 
@@ -666,6 +728,9 @@ class CFieldRunners {
   //! Regular Grid of Cells (rows x cols)
   // TODO always regular grid ?
   class CellArray {
+   public:
+    using Cells = std::vector<FieldCell *>;
+
    public:
     CellArray() { }
 
@@ -690,11 +755,13 @@ class CFieldRunners {
       return (r >= 0 && uint(r) < rows_ && c >= 0 && uint(c) < cols_);
     }
 
-    Cell *getCell(uint row, uint col) const {
+    const Cells &cells() const { return cells_; }
+
+    FieldCell *getCell(uint row, uint col) const {
       return cells_[row*cols_ + col];
     }
 
-    void setCell(uint row, uint col, Cell *cell) {
+    void setCell(uint row, uint col, FieldCell *cell) {
       cells_[row*cols_ + col] = cell;
     }
 
@@ -710,7 +777,7 @@ class CFieldRunners {
     uint cols_ { 0 }; // number of columns
 
     // vector of cells
-    std::vector<Cell *> cells_;
+    Cells cells_;
   };
 
   //------
@@ -761,11 +828,13 @@ class CFieldRunners {
     int getNumRows() const;
     int getNumCols() const;
 
+    const CellArray &cells() const { return cells_; }
+
     bool isInside(const CellPos &pos) const;
 
-    void getCell(const CellPos &pos, Cell **cell) const;
+    void getCell(const CellPos &pos, FieldCell **cell) const;
 
-    void setCell(const CellPos &pos, Cell *cell);
+    void setCell(const CellPos &pos, FieldCell *cell);
 
     //! setup field
     void build(uint rows, uint cols);
@@ -778,41 +847,31 @@ class CFieldRunners {
     //! draw field elements
     virtual void draw();
 
+    //! draw selected field cell
+    virtual void drawSelectedCell();
+    virtual void drawSelected(FieldCell *cell);
+
     //! draw field cells
     virtual void drawCells();
 
-    //! draw weapons and prices
-    virtual void drawWeaponPrices();
-
-    virtual void drawWeaponPrice(CellType cellType, int x1, int y1, int w, int h);
-
-    int cellPrice(CellType cellType) const;
+    //! draw field annotations
+    virtual void drawAnnotations();
 
    private:
-    static bool imageLoaded_; //! is image loaded ?
-
-    static ImageId gun_price_image_;             //! gun price image
-    static ImageId glue_price_image_;            //! glue price image
-    static ImageId missile_price_image_;         //! missile price image
-    static ImageId zap_price_image_;             //! zap price image
-
-    static ImageId gun_price_disable_image_;     //! disabled gun price image
-    static ImageId glue_price_disable_image_;    //! disabled glue price image
-    static ImageId missile_price_disable_image_; //! disabled missile price image
-    static ImageId zap_price_disable_image_;     //! disabled zap price image
-
     CFieldRunners *fieldRunners_;
 
     CellArray cells_; //! field cells
+
+    FieldCell *selectedCell_ = nullptr;
   };
 
   //---
 
   //! Entrance to emit runners from
-  class Entrance : public Cell {
+  class Entrance : public FieldCell {
    public:
     Entrance(CFieldRunners *fieldRunners, const CellPos &pos) :
-     Cell(fieldRunners, pos) {
+     FieldCell(fieldRunners, pos) {
     }
 
     virtual ~Entrance() { }
@@ -824,10 +883,10 @@ class CFieldRunners {
   //---
 
   //! Exit runners want to get to
-  class Exit : public Cell {
+  class Exit : public FieldCell {
    public:
     Exit(CFieldRunners *fieldRunners, const CellPos &pos) :
-     Cell(fieldRunners, pos) {
+     FieldCell(fieldRunners, pos) {
     }
 
     virtual ~Exit() { }
@@ -842,19 +901,13 @@ class CFieldRunners {
   //! (Virtual - derive from this for different types of runners)
   // TODO: need to model speed, health
   // TODO: handle dying/dead/alive
-  class Runner {
+  class Runner : public Cell {
    public:
     Runner(CFieldRunners *fieldRunners);
 
     virtual ~Runner() { }
 
-    CFieldRunners *fieldRunners() const { return fieldRunners_; }
-
     CFieldRunnersWindow *getWindow() const;
-
-    // get/set current position
-    const CellPos &getPos() const { return pos_; }
-    void setPos(const CellPos &pos) { pos_ = pos; }
 
     // set/get goal position
     const CellPos &getGoal() const { return goal_; }
@@ -875,7 +928,6 @@ class CFieldRunners {
 
     // get/set health
     int getHealth() const { return health_; }
-
     void setHealth(int health) { health_ = health; }
 
     // damage runner
@@ -902,7 +954,7 @@ class CFieldRunners {
     virtual void update();
 
     //! search next node
-    virtual Cell *searchNext() const;
+    virtual FieldCell *searchNext() const;
 
     //! draw runner
     virtual void draw();
@@ -912,12 +964,9 @@ class CFieldRunners {
 
     int getFrame() const;
 
-    void getPos(int &x, int &y) const;
+    void getXYPos(int &x, int &y) const;
 
    protected:
-    CFieldRunners *fieldRunners_;
-
-    CellPos pos_;               //! current position
     CellPos goal_;              //! goal position
     bool    atGoal_  { false }; //! made it to the goal position
     int     health_  { 0 };     //! current health
@@ -1043,7 +1092,7 @@ class CFieldRunners {
 
     ImageId getFrameImage(int frame) override;
 
-    Cell *searchNext() const override;
+    FieldCell *searchNext() const override;
 
    private:
     static ImageId image_;       //! image
@@ -1067,7 +1116,7 @@ class CFieldRunners {
 
     ImageId getFrameImage(int frame) override;
 
-    Cell *searchNext() const override;
+    FieldCell *searchNext() const override;
 
    private:
     static ImageId image_;       //! image
@@ -1091,13 +1140,13 @@ class CFieldRunners {
 
     ImageId getFrameImage(int frame) override;
 
-    Cell *searchNext() const override;
+    FieldCell *searchNext() const override;
 
    private:
     static ImageId image_;       //! image
     static bool    imageLoaded_; //! is image loaded ?
 
-    using CellSet = std::set<Cell *>;
+    using CellSet = std::set<FieldCell *>;
 
     mutable CellSet visited_;
   };
@@ -1112,11 +1161,12 @@ class CFieldRunners {
 
     virtual ~Bullet() { }
 
+    CFieldRunners *fieldRunners() const { return fieldRunners_; }
+
     CFieldRunnersWindow *getWindow() const;
 
     // get/set current point
     void setPoint(const Point &point) { point_ = point; }
-
     const Point &getPoint() const { return point_; }
 
     bool isAtGoal() const { return atGoal_; }
@@ -1145,6 +1195,7 @@ class CFieldRunners {
     virtual ~Rocket() { }
 
     Orient orient() const { return orient_; }
+    void setOrient(Orient orient) { orient_ = orient; }
 
     bool isDone() const override;
 
@@ -1157,12 +1208,36 @@ class CFieldRunners {
     void draw() override;
 
    private:
+    void setNewOrient(Orient newOrient);
+
+   private:
     Runner *runner_ { nullptr };
     Orient  orient_ { ORIENT_NONE };
-//  int     frame_  { -1 };
 
     static ImageId images_[8];    //! rocket images
     static bool    imagesLoaded_; //! are images loaded ?
+  };
+
+  //-----
+
+  class PulseBullet : public Bullet {
+   public:
+    PulseBullet(CFieldRunners *fieldRunners, const Point &point, Orient orient);
+
+    virtual ~PulseBullet() { }
+
+    Orient orient() const { return orient_; }
+
+    int getDamage() const { return 20; }
+
+    //! update pulse (move to next cell)
+    void update() override;
+
+    //! draw pulse
+    void draw() override;
+
+   private:
+    Orient orient_ { ORIENT_NONE };
   };
 
   //-----
@@ -1176,6 +1251,8 @@ class CFieldRunners {
     SearchField(CFieldRunners *fieldRunners);
 
    ~SearchField() { }
+
+    CFieldRunners *fieldRunners() const { return fieldRunners_; }
 
     // smallest/optimal cost to goal
     double pathCostEstimate(const CellPos &startLoc, const CellPos &goalLoc) override;
@@ -1201,6 +1278,18 @@ class CFieldRunners {
 
   using Weapons = std::vector<CellType>;
 
+  //------
+
+  struct Annotation {
+    int         row    { 0 };
+    int         col    { 0 };
+    int         width  { 1 };
+    int         height { 1 };
+    std::string id;
+  };
+
+  using Annotations = std::vector<Annotation>;
+
  public:
   CFieldRunners(CFieldRunnersWindow *window);
 
@@ -1214,9 +1303,19 @@ class CFieldRunners {
 
   virtual Player *createPlayer();
 
+  Player *getPlayer() const { return player_.get(); }
+
+  //---
+
   virtual Field *createField();
 
-  virtual Cell *createCell(CellType cellType, const CellPos &pos);
+  Field *getField() const { return field_.get(); }
+
+  //---
+
+  virtual FieldCell *createCell(CellType cellType, const CellPos &pos);
+
+  WeaponCell *createWeaponCell(CellType cellType, const CellPos &pos);
 
   virtual EmptyCell  *createEmptyCell (const CellPos &pos);
   virtual BorderCell *createBorderCell(const CellPos &pos);
@@ -1226,6 +1325,7 @@ class CFieldRunners {
   virtual GlueCell     *createGlueCell    (const CellPos &pos);
   virtual SnowbombCell *createSnowbombCell(const CellPos &pos);
   virtual MissileCell  *createMissileCell (const CellPos &pos);
+  virtual ShotgunCell  *createShotgunCell (const CellPos &pos);
   virtual ZapCell      *createZapCell     (const CellPos &pos);
   virtual PulseCell    *createPulseCell   (const CellPos &pos);
   virtual LaserCell    *createLaserCell   (const CellPos &pos);
@@ -1250,13 +1350,15 @@ class CFieldRunners {
 
   virtual Rocket *createRocket(const Point &point, Runner *runner, Orient orient);
 
-  //---
+  virtual PulseBullet *createPulseBullet(const Point &point, Orient orient);
 
-  Player *getPlayer() const { return player_.get(); }
+  //---
 
   uint getLevel() const { return level_; }
 
   const Weapons &getWeapons() const { return weapons_; }
+
+  const Annotations &getAnnotations() const { return annotations_; }
 
   //---
 
@@ -1284,9 +1386,11 @@ class CFieldRunners {
   void setBorderType(const BorderType &t) { borderType_ = t; }
 
   void pixelToPos(const Point &point, CellPos &pos) const;
-  void posToPixel(const CellPos &pos, Point &point) const;
 
-  void getCell(const CellPos &pos, Cell **cell) const;
+  void posToPixel(const CellPos &pos, Point &point) const;
+  void posToPixel(const CellPos &pos, double dx, double dy, Point &point) const;
+
+  void getCell(const CellPos &pos, FieldCell **cell) const;
 
   uint getNumRunners() const;
 
@@ -1297,10 +1401,17 @@ class CFieldRunners {
   void setBuyCellType(CellType cellType);
 
   // buy cell
-  void buyCell(const CellPos &pos);
+  Cell *buyCell(const CellPos &pos);
 
   // sell cell
   void sellCell(const CellPos &pos);
+  void sellCell(FieldCell *cell);
+
+  // upgrade cell
+  void upgradeCell(FieldCell *cell);
+
+  // select cell
+  void selectCell(FieldCell *cell);
 
   // add block cell
   void addBlockCell(const CellPos &pos);
@@ -1339,6 +1450,9 @@ class CFieldRunners {
   // send out a rocket
   void emitRocket(const Point &point, Runner *runner, Orient orient);
 
+  // send out a rocket
+  void emitPulseBullet(const Point &point, Orient orient);
+
   //---
 
   CellPos getStartPos(std::string &id) const;
@@ -1365,19 +1479,45 @@ class CFieldRunners {
   bool isPaused() const { return paused_; }
   void setPaused(bool b) { paused_ = b; }
 
+  //! get/set fast forrward
+  bool isFastForward() const { return fastForward_; }
+  void setFastForward(bool b) { fastForward_ = b; }
+
   //! update game
-  void update();
+  virtual void update();
 
   //! draw game
-  void draw();
+  virtual void draw();
 
   //! draw health bar
   virtual void drawHealthBar(int x, int y, double percent);
 
+  //! draw status fields
   virtual void drawMoney(int money);
   virtual void drawScore(int score);
   virtual void drawLives(int lives);
   virtual void drawLevel(int level);
+
+  //! draw buttons
+  virtual void drawPausePlay();
+  virtual void drawFastForward();
+  virtual void drawSettings();
+
+  //! draw annotation
+  virtual void drawAnnotation(int row, int col, int width, int height, const std::string &id);
+
+  //! draw weapons and prices
+  virtual void drawWeaponPrices();
+
+  virtual void drawWeaponPrice(CellType cellType, int x1, int y1, int w, int h);
+
+  int cellPrice(CellType cellType) const;
+
+  //---
+
+  double orientAngle(Orient orient) const;
+
+  //---
 
   //! bool of specified percent (0->1) chance
   static bool randBool(double weight);
@@ -1415,12 +1555,14 @@ class CFieldRunners {
   BgType       bgType_      { BgType::NONE };     //!< Bg type
   BorderType   borderType_  { BorderType::NONE }; //!< Border type
   bool         paused_      { false };            //!< is paused
+  bool         fastForward_ { false };            //!< is fast forward
   uint         tick_        { 0 };                //!< Update Count
   uint         level_       { 1 };                //!< Current Level
   uint         levelTicks_  { 100 };              //!< Current Level ticks
   Weapons      weapons_;                          //!< Weapons
   CellType     buyCellType_ { CellType::GUN };    //!< Buy Cell Type
   LevelRunners levelRunners_;                     //!< Runners per level
+  Annotations  annotations_;                      //!< Annotations
 };
 
 #endif

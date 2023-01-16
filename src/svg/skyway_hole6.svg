@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="192mm"
+   height="192mm"
+   viewBox="0 0 192 192"
+   version="1.1"
+   id="svg5"
+   inkscape:version="1.1.2 (0a00cf5339, 2022-02-04)"
+   sodipodi:docname="skyway_hole6.svg"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview7"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:document-units="mm"
+     showgrid="false"
+     inkscape:zoom="1.4318664"
+     inkscape:cx="374.68579"
+     inkscape:cy="362.11479"
+     inkscape:window-width="2914"
+     inkscape:window-height="1914"
+     inkscape:window-x="732"
+     inkscape:window-y="230"
+     inkscape:window-maximized="0"
+     inkscape:current-layer="layer1"
+     width="192mm" />
+  <defs
+     id="defs2" />
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1">
+    <path
+       style="fill:#556b2f;stroke:#a0522d;stroke-width:4.23333;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+       d="M -0.06999387,182.71044 0.34030613,8.0836561 8.1351561,0.08365613 88.135156,-0.63683387 96.13516,7.2669561 V 44.441989 l 8.98271,8 79.01729,-0.76098 8.15365,8.76098 -0.3073,72.341661 -7.84635,8 h -80.98271 l -7.01729,8 0.225699,36.67321 -8.225703,6.12512 -80.7559999,1.00335 z"
+       id="path957"
+       sodipodi:nodetypes="ccccccccccccccccc" />
+  </g>
+</svg>

@@ -46,13 +46,13 @@ createField()
   return new Field(this);
 }
 
-CFieldRunners::Cell *
+CFieldRunners::FieldCell *
 CFieldRunners::
 createCell(CellType cellType, const CellPos &pos)
 {
   //std::cerr << "createCell\n";
 
-  Cell *cell = nullptr;
+  FieldCell *cell = nullptr;
 
   if      (cellType == CellType::EMPTY   ) cell = createEmptyCell   (pos);
   else if (cellType == CellType::BORDER  ) cell = createBorderCell  (pos);
@@ -62,14 +62,27 @@ createCell(CellType cellType, const CellPos &pos)
   else if (cellType == CellType::GLUE    ) cell = createGlueCell    (pos);
   else if (cellType == CellType::SNOWBOMB) cell = createSnowbombCell(pos);
   else if (cellType == CellType::MISSILE ) cell = createMissileCell (pos);
+  else if (cellType == CellType::SHOTGUN ) cell = createShotgunCell (pos);
   else if (cellType == CellType::ZAP     ) cell = createZapCell     (pos);
   else if (cellType == CellType::PULSE   ) cell = createPulseCell   (pos);
   else if (cellType == CellType::LASER   ) cell = createLaserCell   (pos);
   else if (cellType == CellType::FIREBOMB) cell = createFirebombCell(pos);
 
-  else assert(false);
+  assert(cell);
 
   return cell;
+}
+
+CFieldRunners::WeaponCell *
+CFieldRunners::
+createWeaponCell(CellType cellType, const CellPos &pos)
+{
+  auto *cell = createCell(cellType, pos);
+
+  auto *weapon = dynamic_cast<WeaponCell *>(cell);
+  assert(weapon);
+
+  return weapon;
 }
 
 //---
@@ -123,6 +136,13 @@ CFieldRunners::
 createMissileCell(const CellPos &pos)
 {
   return new MissileCell(this, pos);
+}
+
+CFieldRunners::ShotgunCell *
+CFieldRunners::
+createShotgunCell(const CellPos &pos)
+{
+  return new ShotgunCell(this, pos);
 }
 
 CFieldRunners::ZapCell *
@@ -236,6 +256,8 @@ createTrain()
   return new Train(this);
 }
 
+//---
+
 CFieldRunners::Rocket *
 CFieldRunners::
 createRocket(const Point &point, Runner *runner, Orient orient)
@@ -243,6 +265,15 @@ createRocket(const Point &point, Runner *runner, Orient orient)
   std::cerr << "createRocket\n";
 
   return new Rocket(this, point, runner, orient);
+}
+
+CFieldRunners::PulseBullet *
+CFieldRunners::
+createPulseBullet(const Point &point, Orient orient)
+{
+  std::cerr << "createPulseBullet\n";
+
+  return new PulseBullet(this, point, orient);
 }
 
 //---
@@ -290,16 +321,23 @@ void
 CFieldRunners::
 posToPixel(const CellPos &pos, Point &point) const
 {
-  Size cellSize;
-  getCellSize(cellSize);
-
-  point.x = pos.col*cellSize.width;
-  point.y = pos.row*cellSize.height;
+  return posToPixel(pos, 0.0, 0.0, point);
 }
 
 void
 CFieldRunners::
-getCell(const CellPos &pos, Cell **cell) const
+posToPixel(const CellPos &pos, double dx, double dy, Point &point) const
+{
+  Size cellSize;
+  getCellSize(cellSize);
+
+  point.x = int((pos.col + dx)*cellSize.width );
+  point.y = int((pos.row + dy)*cellSize.height);
+}
+
+void
+CFieldRunners::
+getCell(const CellPos &pos, FieldCell **cell) const
 {
   return field_->getCell(pos, cell);
 }
@@ -325,7 +363,7 @@ setBuyCellType(CellType cellType)
   buyCellType_ = cellType;
 }
 
-void
+CFieldRunners::Cell *
 CFieldRunners::
 buyCell(const CellPos &pos)
 {
@@ -334,14 +372,13 @@ buyCell(const CellPos &pos)
 
   if (pos.row <= 0 || pos.row >= num_rows - 1 ||
       pos.col <= 0 || pos.col >= num_cols - 1)
-    return;
+    return nullptr;
 
-  Cell *cell;
+  FieldCell *cell;
   field_->getCell(pos, &cell);
-  if (! cell) return;
 
-  if (! cell->isSolid()) {
-    auto *cell1 = createCell(buyCellType_, pos);
+  if (cell && cell->canAddWeapon()) {
+    auto *cell1 = createWeaponCell(buyCellType_, pos);
 
     int money = cell1->getBuyPrice();
 
@@ -349,10 +386,14 @@ buyCell(const CellPos &pos)
       field_->setCell(pos, cell1);
 
       player_->subMoney(money);
+
+      return cell1;
     }
-    else
-      delete cell1;
+
+    delete cell1;
   }
+
+  return nullptr;
 }
 
 void
@@ -366,18 +407,55 @@ sellCell(const CellPos &pos)
       pos.col <= 0 || pos.col >= num_cols - 1)
     return;
 
-  Cell *cell;
+  FieldCell *cell;
   field_->getCell(pos, &cell);
   if (! cell) return;
 
-  if (cell->isSolid()) {
-    int money = cell->getSellPrice();
+  if (! cell->isWeapon())
+    return;
 
-    auto *cell1 = createCell(CellType::EMPTY, pos);
+  sellCell(cell);
+}
 
-    field_->setCell(pos, cell1);
+void
+CFieldRunners::
+sellCell(FieldCell *cell)
+{
+  assert(cell && cell->isWeapon());
 
-    player_->addMoney(money);
+  auto *weapon = dynamic_cast<WeaponCell *>(cell);
+  assert(weapon);
+
+  int money = weapon->getSellPrice();
+
+  auto pos = cell->getPos();
+
+  auto *cell1 = createCell(CellType::EMPTY, pos);
+
+  field_->setCell(pos, cell1);
+
+  player_->addMoney(money);
+}
+
+void
+CFieldRunners::
+upgradeCell(FieldCell *cell)
+{
+  assert(cell && cell->isWeapon());
+
+  auto *weapon = dynamic_cast<WeaponCell *>(cell);
+  assert(weapon);
+
+  if (weapon->level() < 3)
+    weapon->setLevel(weapon->level() + 1);
+}
+
+void
+CFieldRunners::
+selectCell(FieldCell *cell)
+{
+  for (auto *cell1 : field_->cells().cells()) {
+    cell1->setSelected(cell1 == cell);
   }
 }
 
@@ -392,7 +470,7 @@ addBlockCell(const CellPos &pos)
       pos.col <= 0 || pos.col >= num_cols - 1)
     return;
 
-  Cell *cell;
+  FieldCell *cell;
   field_->getCell(pos, &cell);
   if (! cell) return;
 
@@ -439,6 +517,8 @@ initBuild()
   weapons_.clear();
 
   levelRunners_.clear();
+
+  annotations_.clear();
 }
 
 CFieldRunners::Entrance *
@@ -526,7 +606,6 @@ loadMap(const std::string &filename)
     if (line[0] == '#') continue;
 
     std::vector<std::string> fields;
-
     CStrUtil::addFields(line, fields, "=");
 
     if (fields.size() != 2)
@@ -542,7 +621,6 @@ loadMap(const std::string &filename)
     }
     else if (fields[0] == "bgcolor") {
       std::vector<std::string> fields1;
-
       CStrUtil::addFields(fields[1], fields1, ",");
 
       if (fields1.size() != 3)
@@ -559,7 +637,6 @@ loadMap(const std::string &filename)
     }
     else if (fields[0] == "fgcolor") {
       std::vector<std::string> fields1;
-
       CStrUtil::addFields(fields[1], fields1, ",");
 
       if (fields1.size() != 3)
@@ -584,6 +661,7 @@ loadMap(const std::string &filename)
       else if (fields[1] == "drylands"  ) setBgType(BgType::DRYLANDS);
       else if (fields[1] == "lavaflow"  ) setBgType(BgType::LAVAFLOW);
       else if (fields[1] == "skyway"    ) setBgType(BgType::SKYWAY);
+      else if (fields[1] == "mudslide"  ) setBgType(BgType::MUDSLIDE);
       else return errorMsg("Invalid bg type '" + fields[1] + "'");
     }
     else if (fields[0] == "border") {
@@ -595,6 +673,7 @@ loadMap(const std::string &filename)
       else if (fields[1] == "drylands"  ) setBorderType(BorderType::DRYLANDS);
       else if (fields[1] == "lavaflow"  ) setBorderType(BorderType::LAVAFLOW);
       else if (fields[1] == "skyway"    ) setBorderType(BorderType::SKYWAY);
+      else if (fields[1] == "mudslide"  ) setBorderType(BorderType::MUDSLIDE);
       else return errorMsg("Invalid border type '" + fields[1] + "'");
     }
     else
@@ -757,7 +836,6 @@ loadMap(const std::string &filename)
     if (line[0] == '#') continue;
 
     std::vector<std::string> fields;
-
     CStrUtil::addFields(line, fields, ",");
 
     int nf = int(fields.size());
@@ -797,7 +875,6 @@ loadMap(const std::string &filename)
     if (line[0] == '#') continue;
 
     std::vector<std::string> fields;
-
     CStrUtil::addFields(line, fields, ",");
 
     for (const auto &field : fields) {
@@ -805,6 +882,7 @@ loadMap(const std::string &filename)
       else if (field == "glue"    ) weapons.push_back(CellType::GLUE);
       else if (field == "snowbomb") weapons.push_back(CellType::SNOWBOMB);
       else if (field == "missile" ) weapons.push_back(CellType::MISSILE);
+      else if (field == "shotgun" ) weapons.push_back(CellType::SHOTGUN);
       else if (field == "zap"     ) weapons.push_back(CellType::ZAP);
       else if (field == "pulse"   ) weapons.push_back(CellType::PULSE);
       else if (field == "laser"   ) weapons.push_back(CellType::LASER);
@@ -827,12 +905,10 @@ loadMap(const std::string &filename)
     if (line[0] == '#') continue;
 
     std::vector<std::string> fields;
-
     CStrUtil::addFields(line, fields, ",");
 
     for (const auto &field : fields) {
       std::vector<std::string> fields1;
-
       CStrUtil::addFields(field, fields1, ":");
 
       if (fields1.size() != 3)
@@ -862,6 +938,49 @@ loadMap(const std::string &filename)
 
     ++level;
   }
+
+  //---
+
+  // read annotations
+  Annotations annotations;
+
+  while (il < nl) {
+    auto line = readLine();
+    if (line == "") break;
+
+    if (line[0] == '#') continue;
+
+    std::vector<std::string> fields;
+    CStrUtil::addFields(line, fields, ",");
+
+    if (fields.size() != 5)
+      return errorMsg("Invalid annotation line");
+
+    int row, col, width, height;
+
+    if (! CStrUtil::toInteger(fields[0], &row) ||
+        ! CStrUtil::toInteger(fields[1], &col) ||
+        ! CStrUtil::toInteger(fields[2], &width) ||
+        ! CStrUtil::toInteger(fields[3], &height))
+      return errorMsg("Invalid annotation line");
+
+    auto id = fields[4];
+
+    Annotation annotation;
+
+    annotation.id     = id;
+    annotation.row    = row;
+    annotation.col    = col;
+    annotation.width  = width;
+    annotation.height = height;
+
+    annotations.push_back(annotation);
+  }
+
+  //---
+
+  if (il != nl)
+    return errorMsg("End of file expected");
 
   //---
 
@@ -924,6 +1043,8 @@ loadMap(const std::string &filename)
   weapons_ = weapons;
 
   levelRunners_ = levelRunners;
+
+  annotations_ = annotations;
 
   //---
 
@@ -1079,7 +1200,7 @@ emitTrain(const std::string &entranceId)
 
   for (int row = 0; row < rows; ++row) {
     for (int col = 0; col < cols; ++col) {
-      Cell *cell;
+      FieldCell *cell;
       getCell(CellPos(row, col), &cell);
 
       auto *emptyCell = dynamic_cast<EmptyCell *>(cell);
@@ -1112,14 +1233,27 @@ emitTrain(const std::string &entranceId)
   runners_.push_back(train);
 }
 
+//---
+
 void
 CFieldRunners::
 emitRocket(const Point &point, Runner *runner, Orient orient)
 {
-  auto *rocket = createRocket(point, runner, orient);
+  auto *bullet = createRocket(point, runner, orient);
 
-  bullets_.push_back(rocket);
+  bullets_.push_back(bullet);
 }
+
+void
+CFieldRunners::
+emitPulseBullet(const Point &point, Orient orient)
+{
+  auto *bullet = createPulseBullet(point, orient);
+
+  bullets_.push_back(bullet);
+}
+
+//---
 
 CFieldRunners::CellPos
 CFieldRunners::
@@ -1236,96 +1370,100 @@ update()
   if (isPaused())
     return;
 
-  // remove done bullets
-  bullets_.erase(
-    std::remove_if(bullets_.begin(), bullets_.end(),
-                   std::mem_fun(&Bullet::isDone)), bullets_.end());
+  int nt = (isFastForward() ? 2 : 1);
 
-  //------
+  for (int t = 0; t < nt; ++t) {
+    // remove done bullets
+    bullets_.erase(
+      std::remove_if(bullets_.begin(), bullets_.end(),
+                     std::mem_fun(&Bullet::isDone)), bullets_.end());
 
-  // remove done runners
-  runners_.erase(
-    std::remove_if(runners_.begin(), runners_.end(),
-                   std::mem_fun(&Runner::isDone)), runners_.end());
+    //------
 
-  if (tick_ > levelTicks_ && runners_.empty()) {
-    if (level_ < 99) {
-      ++level_;
+    // remove done runners
+    runners_.erase(
+      std::remove_if(runners_.begin(), runners_.end(),
+                     std::mem_fun(&Runner::isDone)), runners_.end());
 
-      tick_       = 0;
-      levelTicks_ = 100;
+    if (tick_ > levelTicks_ && runners_.empty()) {
+      if (level_ < 99) {
+        ++level_;
 
-      std::cerr << "Level " << level_ << "\n";
+        tick_       = 0;
+        levelTicks_ = 100;
+
+        std::cerr << "Level " << level_ << "\n";
+      }
     }
-  }
 
-  //------
+    //------
 
-  // update bullets
-  for (auto *bullet : bullets_)
-    bullet->update();
+    // update bullets
+    for (auto *bullet : bullets_)
+      bullet->update();
 
-  // update runners
-  for (auto *runner : runners_)
-    runner->update();
+    // update runners
+    for (auto *runner : runners_)
+      runner->update();
 
-  // update field
-  field_->update();
+    // update field
+    field_->update();
 
-  //------
+    //------
 
-  auto pl = levelRunners_.find(level_);
+    auto pl = levelRunners_.find(level_);
 
-  if (pl != levelRunners_.end()) {
-    for (const auto &runnerData : (*pl).second) {
-      if (tick_ == runnerData.ticks) {
-        switch (runnerData.type) {
-          case RunnerType::SOLDIER:
-            emitSoldier(runnerData.entranceId);
-            break;
-          case RunnerType::MERCENARY:
-            emitMercenary(runnerData.entranceId);
-            break;
-          case RunnerType::TRAIN:
-            emitTrain(runnerData.entranceId);
-            break;
-          case RunnerType::CAR:
-            emitCar(runnerData.entranceId);
-            break;
-          case RunnerType::TANK:
-            emitTank(runnerData.entranceId);
-            break;
-          case RunnerType::HELICOPTER:
-            emitHelicopter(runnerData.entranceId);
-            break;
-          case RunnerType::PLANE:
-            emitPlane(runnerData.entranceId);
-            break;
-          default:
-            assert(false);
-            break;
+    if (pl != levelRunners_.end()) {
+      for (const auto &runnerData : (*pl).second) {
+        if (tick_ == runnerData.ticks) {
+          switch (runnerData.type) {
+            case RunnerType::SOLDIER:
+              emitSoldier(runnerData.entranceId);
+              break;
+            case RunnerType::MERCENARY:
+              emitMercenary(runnerData.entranceId);
+              break;
+            case RunnerType::TRAIN:
+              emitTrain(runnerData.entranceId);
+              break;
+            case RunnerType::CAR:
+              emitCar(runnerData.entranceId);
+              break;
+            case RunnerType::TANK:
+              emitTank(runnerData.entranceId);
+              break;
+            case RunnerType::HELICOPTER:
+              emitHelicopter(runnerData.entranceId);
+              break;
+            case RunnerType::PLANE:
+              emitPlane(runnerData.entranceId);
+              break;
+            default:
+              assert(false);
+              break;
+          }
         }
       }
     }
-  }
-  else {
-    if      (tick_ % 30 == 0)
-      emitSoldier();
-    else if (tick_ % 50 == 0)
-      emitMercenary();
-    else if (tick_ % 55 == 0)
-      emitTrain();
-    else if (tick_ % 70 == 0)
-      emitCar();
-    else if (tick_ % 110 == 0)
-      emitTank();
-    else if (tick_ % 130 == 0)
-      emitPlane();
-  }
+    else {
+      if      (tick_ % 30 == 0)
+        emitSoldier();
+      else if (tick_ % 50 == 0)
+        emitMercenary();
+      else if (tick_ % 55 == 0)
+        emitTrain();
+      else if (tick_ % 70 == 0)
+        emitCar();
+      else if (tick_ % 110 == 0)
+        emitTank();
+      else if (tick_ % 130 == 0)
+        emitPlane();
+    }
 
-  //------
+    //------
 
-  ++tick_;
+    ++tick_;
+  }
 }
 
 void
@@ -1358,6 +1496,18 @@ draw()
   //------
 
   player_->draw();
+
+  //------
+
+  drawPausePlay();
+  drawFastForward();
+  drawSettings();
+
+  drawWeaponPrices();
+
+  //------
+
+  field_->drawSelectedCell();
 }
 
 void
@@ -1418,6 +1568,157 @@ drawLevel(int level)
 
   getWindow()->drawText(xr, 32, CFieldRunners::toString(level).c_str());
 }
+
+void
+CFieldRunners::
+drawPausePlay()
+{
+}
+
+void
+CFieldRunners::
+drawFastForward()
+{
+}
+
+void
+CFieldRunners::
+drawSettings()
+{
+}
+
+void
+CFieldRunners::
+drawAnnotation(int, int, int, int, const std::string &)
+{
+}
+
+void
+CFieldRunners::
+drawWeaponPrices()
+{
+  uint rows = getNumRows();
+  uint cols = getNumCols();
+
+  Size cellSize;
+  getCellSize(cellSize);
+
+  int w = cellSize.width;
+  int h = cellSize.height;
+
+  int x1 = int(cols)*cellSize.width  - int(getWeapons().size())*w;
+  int y1 = int(rows)*cellSize.height - h;
+
+  for (const auto &weapon : getWeapons()) {
+    drawWeaponPrice(weapon, x1, y1, w, h);
+
+    x1 += w;
+  }
+}
+
+#include "images/gun_price_png.h"
+#include "images/glue_price_png.h"
+#include "images/missile_price_png.h"
+#include "images/zap_price_png.h"
+
+#include "images/gun_price_disable_png.h"
+#include "images/glue_price_disable_png.h"
+#include "images/missile_price_disable_png.h"
+#include "images/zap_price_disable_png.h"
+
+void
+CFieldRunners::
+drawWeaponPrice(CellType cellType, int x1, int y1, int w, int h)
+{
+  static bool    images_loaded;;
+  static ImageId gun_price_image;
+  static ImageId glue_price_image;
+  static ImageId missile_price_image;
+  static ImageId zap_price_image;
+  static ImageId gun_price_disable_image;
+  static ImageId glue_price_disable_image;
+  static ImageId missile_price_disable_image;
+  static ImageId zap_price_disable_image;
+
+  if (! images_loaded) {
+    images_loaded = true;
+
+    auto *window = getWindow();
+
+    gun_price_image     = window->loadImage(gun_price_data    , GUN_PRICE_DATA_LEN);
+    glue_price_image    = window->loadImage(glue_price_data   , GLUE_PRICE_DATA_LEN);
+    missile_price_image = window->loadImage(missile_price_data, MISSILE_PRICE_DATA_LEN);
+    zap_price_image     = window->loadImage(zap_price_data    , ZAP_PRICE_DATA_LEN);
+
+    gun_price_disable_image     =
+     window->loadImage(gun_price_disable_data    , GUN_PRICE_DISABLE_DATA_LEN);
+    glue_price_disable_image    =
+     window->loadImage(glue_price_disable_data   , GLUE_PRICE_DISABLE_DATA_LEN);
+    missile_price_disable_image =
+     window->loadImage(missile_price_disable_data, MISSILE_PRICE_DISABLE_DATA_LEN);
+    zap_price_disable_image     =
+     window->loadImage(zap_price_disable_data    , ZAP_PRICE_DISABLE_DATA_LEN);
+  }
+
+  int money = getPlayer()->getMoney();
+  int price = cellPrice(cellType);
+
+  auto selectImage = [&](const ImageId &image, const ImageId &disable_image) {
+    if (money >= price)
+      getWindow()->drawImage(x1, y1, image);
+    else
+      getWindow()->drawImage(x1, y1, disable_image);
+  };
+
+  switch (cellType) {
+    case CellType::GUN     : selectImage(gun_price_image    , gun_price_disable_image    ); break;
+    case CellType::GLUE    : selectImage(glue_price_image   , glue_price_disable_image   ); break;
+    case CellType::SNOWBOMB: selectImage(glue_price_image   , glue_price_disable_image   ); break;
+    case CellType::MISSILE : selectImage(missile_price_image, missile_price_disable_image); break;
+    case CellType::SHOTGUN : selectImage(missile_price_image, missile_price_disable_image); break;
+    case CellType::ZAP     : selectImage(zap_price_image    , zap_price_disable_image    ); break;
+    case CellType::PULSE   : selectImage(zap_price_image    , zap_price_disable_image    ); break;
+    case CellType::LASER   : selectImage(zap_price_image    , zap_price_disable_image    ); break;
+    case CellType::FIREBOMB: selectImage(zap_price_image    , zap_price_disable_image    ); break;
+    default: assert(false); break;
+ }
+
+  if (getBuyCellType() == cellType) {
+    getWindow()->setForeground(Color(1.0, 0.0, 0.0));
+    getWindow()->drawRectangle(x1, y1, x1 + w, y1 + h);
+  }
+}
+
+int
+CFieldRunners::
+cellPrice(CellType cellType) const
+{
+  switch (cellType) {
+    case CellType::GUN     : return CFieldRunners::GunCell     ::buyPrice();
+    case CellType::GLUE    : return CFieldRunners::GlueCell    ::buyPrice();
+    case CellType::SNOWBOMB: return CFieldRunners::SnowbombCell::buyPrice();
+    case CellType::MISSILE : return CFieldRunners::MissileCell ::buyPrice();
+    case CellType::SHOTGUN : return CFieldRunners::ShotgunCell ::buyPrice();
+    case CellType::ZAP     : return CFieldRunners::ZapCell     ::buyPrice();
+    case CellType::PULSE   : return CFieldRunners::PulseCell   ::buyPrice();
+    case CellType::LASER   : return CFieldRunners::LaserCell   ::buyPrice();
+    case CellType::FIREBOMB: return CFieldRunners::FirebombCell::buyPrice();
+    default: assert(false) ; return 0;
+  }
+}
+
+//---
+
+double
+CFieldRunners::
+orientAngle(Orient orient) const
+{
+  double da = M_PI/4.0;
+
+  return orient*da;
+}
+
+//---
 
 bool
 CFieldRunners::
@@ -1500,50 +1801,10 @@ draw()
 
 #include "images/field_png.h"
 
-#include "images/gun_price_png.h"
-#include "images/glue_price_png.h"
-#include "images/missile_price_png.h"
-#include "images/zap_price_png.h"
-
-#include "images/gun_price_disable_png.h"
-#include "images/glue_price_disable_png.h"
-#include "images/missile_price_disable_png.h"
-#include "images/zap_price_disable_png.h"
-
-bool CFieldRunners::Field::imageLoaded_;
-
-ImageId CFieldRunners::Field::gun_price_image_;
-ImageId CFieldRunners::Field::glue_price_image_;
-ImageId CFieldRunners::Field::missile_price_image_;
-ImageId CFieldRunners::Field::zap_price_image_;
-ImageId CFieldRunners::Field::gun_price_disable_image_;
-ImageId CFieldRunners::Field::glue_price_disable_image_;
-ImageId CFieldRunners::Field::missile_price_disable_image_;
-ImageId CFieldRunners::Field::zap_price_disable_image_;
-
 CFieldRunners::Field::
 Field(CFieldRunners *fieldRunners) :
  fieldRunners_(fieldRunners)
 {
-  if (! imageLoaded_) {
-    auto *window = fieldRunners_->getWindow();
-
-    gun_price_image_     = window->loadImage(gun_price_data    , GUN_PRICE_DATA_LEN);
-    glue_price_image_    = window->loadImage(glue_price_data   , GLUE_PRICE_DATA_LEN);
-    missile_price_image_ = window->loadImage(missile_price_data, MISSILE_PRICE_DATA_LEN);
-    zap_price_image_     = window->loadImage(zap_price_data    , ZAP_PRICE_DATA_LEN);
-
-    gun_price_disable_image_     =
-     window->loadImage(gun_price_disable_data    , GUN_PRICE_DISABLE_DATA_LEN);
-    glue_price_disable_image_    =
-     window->loadImage(glue_price_disable_data   , GLUE_PRICE_DISABLE_DATA_LEN);
-    missile_price_disable_image_ =
-     window->loadImage(missile_price_disable_data, MISSILE_PRICE_DISABLE_DATA_LEN);
-    zap_price_disable_image_     =
-     window->loadImage(zap_price_disable_data    , ZAP_PRICE_DISABLE_DATA_LEN);
-
-    imageLoaded_ = true;
-  }
 }
 
 CFieldRunnersWindow *
@@ -1584,7 +1845,7 @@ isInside(const CellPos &pos) const
 
 void
 CFieldRunners::Field::
-getCell(const CellPos &pos, Cell **cell) const
+getCell(const CellPos &pos, FieldCell **cell) const
 {
   *cell = cells_.getCell(uint(pos.row), uint(pos.col));
 
@@ -1594,7 +1855,7 @@ getCell(const CellPos &pos, Cell **cell) const
 
 void
 CFieldRunners::Field::
-setCell(const CellPos &pos, Cell *cell)
+setCell(const CellPos &pos, FieldCell *cell)
 {
   assert(cell->getPos() == pos);
 
@@ -1613,7 +1874,7 @@ build(uint rows, uint cols)
     for (uint col = 0; col < cols; ++col) {
       auto pos = CellPos(int(row), int(col));
 
-      Cell *cell;
+      FieldCell *cell;
 
       if (row <= 0 || row >= rows - 1 || col <= 0 || col >= cols - 1) {
         if (fieldRunners_->isEntrance(pos) || fieldRunners_->isExit(pos))
@@ -1655,7 +1916,7 @@ update()
 
   for (int row = 0; row < rows; ++row) {
     for (int col = 0; col < cols; ++col) {
-      Cell *cell;
+      FieldCell *cell;
       getCell(CellPos(row, col), &cell);
       if (! cell) continue;
 
@@ -1706,6 +1967,8 @@ draw()
   //------
 
   drawCells();
+
+  drawAnnotations();
 }
 
 void
@@ -1719,13 +1982,15 @@ drawCells()
   fieldRunners_->getCellSize(cellSize);
 
   // draw cells
+  selectedCell_ = nullptr;
+
   int y = 0;
 
   for (uint row = 0; row < rows; ++row) {
     int x = 0;
 
     for (uint col = 0; col < cols; ++col) {
-      Cell *cell;
+      FieldCell *cell;
       getCell(CellPos(row, col), &cell);
       if (! cell) continue;
 
@@ -1734,85 +1999,40 @@ drawCells()
       cell->draw();
 
       x += cellSize.width;
+
+      if (cell->isSelected())
+        selectedCell_ = cell;
     }
 
     y += cellSize.height;
   }
-
-  //------
-
-  drawWeaponPrices();
 }
 
 void
 CFieldRunners::Field::
-drawWeaponPrices()
+drawSelectedCell()
 {
-  uint rows = getNumRows();
-  uint cols = getNumCols();
+  if (! selectedCell_)
+    return;
 
-  Size cellSize;
-  fieldRunners_->getCellSize(cellSize);
-
-  int w = cellSize.width;
-  int h = cellSize.height;
-
-  int x1 = int(cols)*cellSize.width  - int(fieldRunners_->getWeapons().size())*w;
-  int y1 = int(rows)*cellSize.height - h;
-
-  for (const auto &weapon : fieldRunners_->getWeapons()) {
-    drawWeaponPrice(weapon, x1, y1, w, h);
-
-    x1 += w;
-  }
-}
-
-int
-CFieldRunners::Field::
-cellPrice(CellType cellType) const
-{
-  switch (cellType) {
-    case CellType::GUN     : return CFieldRunners::GunCell     ::buyPrice();
-    case CellType::GLUE    : return CFieldRunners::GlueCell    ::buyPrice();
-    case CellType::SNOWBOMB: return CFieldRunners::SnowbombCell::buyPrice();
-    case CellType::MISSILE : return CFieldRunners::MissileCell ::buyPrice();
-    case CellType::ZAP     : return CFieldRunners::ZapCell     ::buyPrice();
-    case CellType::PULSE   : return CFieldRunners::PulseCell   ::buyPrice();
-    case CellType::LASER   : return CFieldRunners::LaserCell   ::buyPrice();
-    case CellType::FIREBOMB: return CFieldRunners::FirebombCell::buyPrice();
-    default: assert(false) ; return 0;
-  }
+  drawSelected(selectedCell_);
 }
 
 void
 CFieldRunners::Field::
-drawWeaponPrice(CellType cellType, int x1, int y1, int w, int h)
+drawSelected(FieldCell *cell)
 {
-  int money = fieldRunners_->getPlayer()->getMoney();
-  int price = cellPrice(cellType);
+  cell->drawSelected();
+}
 
-  auto selectImage = [&](const ImageId &image, const ImageId &disable_image) {
-    if (money >= price)
-      getWindow()->drawImage(x1, y1, image);
-    else
-      getWindow()->drawImage(x1, y1, disable_image);
-  };
-
-  switch (cellType) {
-    case CellType::GUN     : selectImage(gun_price_image_, gun_price_disable_image_); break;
-    case CellType::GLUE    : selectImage(glue_price_image_, glue_price_disable_image_); break;
-    case CellType::SNOWBOMB: selectImage(glue_price_image_, glue_price_disable_image_); break;
-    case CellType::MISSILE : selectImage(missile_price_image_, missile_price_disable_image_); break;
-    case CellType::ZAP     : selectImage(zap_price_image_, zap_price_disable_image_); break;
-    case CellType::PULSE   : selectImage(zap_price_image_, zap_price_disable_image_); break;
-    case CellType::LASER   : selectImage(zap_price_image_, zap_price_disable_image_); break;
-    case CellType::FIREBOMB: selectImage(zap_price_image_, zap_price_disable_image_); break;
-    default: assert(false); break;
- }
-
-  if (fieldRunners_->getBuyCellType() == cellType) {
-    getWindow()->setForeground(Color(1.0, 0.0, 0.0));
-    getWindow()->drawRectangle(x1, y1, x1 + w, y1 + h);
+void
+CFieldRunners::Field::
+drawAnnotations()
+{
+  for (const auto &annotation : fieldRunners_->getAnnotations()) {
+    fieldRunners_->drawAnnotation(annotation.row, annotation.col,
+                                  annotation.width, annotation.height,
+                                  annotation.id);
   }
 }
 
@@ -1822,8 +2042,8 @@ void
 CFieldRunners::BlockCell::
 draw()
 {
-  Cell *cell;
-  fieldRunners_->getCell(getPos(), &cell);
+  FieldCell *cell;
+  fieldRunners()->getCell(getPos(), &cell);
   if (! cell) return;
 
   BBox bbox;
@@ -1834,7 +2054,7 @@ draw()
   bbox.getLL(&x, &y);
 
   Size cellSize;
-  fieldRunners_->getCellSize(cellSize);
+  fieldRunners()->getCellSize(cellSize);
 
   getWindow()->setForeground(Color(0.2, 0.2, 0.2));
   getWindow()->fillRectangle(x, y, x + cellSize.width, y + cellSize.height);
@@ -1844,7 +2064,7 @@ draw()
 
 CFieldRunners::Runner::
 Runner(CFieldRunners *fieldRunners) :
- fieldRunners_(fieldRunners)
+ Cell(fieldRunners, CellPos())
 {
 }
 
@@ -1852,7 +2072,7 @@ CFieldRunnersWindow *
 CFieldRunners::Runner::
 getWindow() const
 {
-  return fieldRunners_->getWindow();
+  return fieldRunners()->getWindow();
 }
 
 void
@@ -1870,7 +2090,7 @@ damage(int damage)
     dying_  = true;
     health_ = 0;
 
-    fieldRunners_->playerAddMoney(getDeathMoney());
+    fieldRunners()->playerAddMoney(getDeathMoney());
   }
 }
 
@@ -1900,29 +2120,31 @@ update()
     const auto &nextPos = nextCell->loc;
 
     Size cellSize;
-    fieldRunners_->getCellSize(cellSize);
+    fieldRunners()->getCellSize(cellSize);
 
     // move by speed in direction of next cell
     double speed = (slow_ > 0 ? getSpeed()/2 : getSpeed());
 
-  //int x = pos_.col*cellSize.width  + dx_;
-  //int y = pos_.row*cellSize.height + dy_;
+    auto pos = getPos();
+
+  //int x = pos.col*cellSize.width  + dx_;
+  //int y = pos.row*cellSize.height + dy_;
 
   //int x1 = nextPos.col*cellSize.width;
   //int y1 = nextPos.row*cellSize.height;
 
-    if      (abs(pos_.col - nextPos.col) > std::abs(pos_.row - nextPos.row)) {
+    if      (abs(pos.col - nextPos.col) > std::abs(pos.row - nextPos.row)) {
       // move horizontal (mostly horizontal)
-      double d = (nextPos.col > pos_.col ? speed : -speed);
+      double d = (nextPos.col > pos.col ? speed : -speed);
 
       int d1 = (d > 0 ? int(d*cellSize.width + 0.5) : int(d*cellSize.width - 0.5));
 
       dx_   += d1;
       dist_ += d1;
     }
-    else if (abs(pos_.row - nextPos.row) > std::abs(pos_.col - nextPos.col)) {
+    else if (abs(pos.row - nextPos.row) > std::abs(pos.col - nextPos.col)) {
       // move vertical (mostly vertical)
-      double d = (nextPos.row > pos_.row ? speed : -speed);
+      double d = (nextPos.row > pos.row ? speed : -speed);
 
       int d1 = (d > 0 ? int(d*cellSize.height + 0.5) : int(d*cellSize.height - 0.5));
 
@@ -1937,31 +2159,39 @@ update()
     if      (dx_ >= cellSize.width) {
       dx_ -= cellSize.width;
 
-      ++pos_.col;
+      ++pos.col;
+
+      setPos(pos);
     }
     else if (dx_ <= -cellSize.width) {
       dx_ += cellSize.width;
 
-      --pos_.col;
+      --pos.col;
+
+      setPos(pos);
     }
 
     // move to next row if delta greater than cell height
     if      (dy_ >= cellSize.height) {
       dy_ -= cellSize.height;
 
-      ++pos_.row;
+      ++pos.row;
+
+      setPos(pos);
     }
     else if (dy_ <= -cellSize.height) {
       dy_ += cellSize.height;
 
-      --pos_.row;
+      --pos.row;
+
+      setPos(pos);
     }
 
     // check at goal (exit)
-    atGoal_ = (pos_ == goal_);
+    atGoal_ = (pos == goal_);
 
     if (atGoal_)
-      fieldRunners_->playerLoseLife();
+      fieldRunners()->playerLoseLife();
   }
 
   //---
@@ -1971,15 +2201,15 @@ update()
     --slow_;
 }
 
-CFieldRunners::Cell *
+CFieldRunners::FieldCell *
 CFieldRunners::Runner::
 searchNext() const
 {
-  SearchField searchField(fieldRunners_);
+  SearchField searchField(fieldRunners());
 
   SearchField::NodeList pathNodes;
 
-  if (searchField.search(pos_, goal_, pathNodes)) {
+  if (searchField.search(getPos(), goal_, pathNodes)) {
     if (pathNodes.size() < 2)
       return nullptr;
 
@@ -1987,7 +2217,7 @@ searchNext() const
 
     ++p;
 
-    return reinterpret_cast<Cell *>(*p);
+    return dynamic_cast<FieldCell *>(*p);
   }
   else
     return nullptr;
@@ -2006,7 +2236,7 @@ draw()
 {
   int x, y;
 
-  getPos(x, y);
+  getXYPos(x, y);
 
   if (! isDying()) {
     int frame = getFrame();
@@ -2030,7 +2260,7 @@ drawHealthBar(int x, int y)
 {
   double percent =(1.0*getHealth())/getMaxHealth();
 
-  fieldRunners_->drawHealthBar(x, y, percent);
+  fieldRunners()->drawHealthBar(x, y, percent);
 }
 
 ImageId
@@ -2049,10 +2279,10 @@ getFrame() const
 
 void
 CFieldRunners::Runner::
-getPos(int &x, int &y) const
+getXYPos(int &x, int &y) const
 {
-  Cell *cell;
-  fieldRunners_->getCell(getPos(), &cell);
+  FieldCell *cell;
+  fieldRunners()->getCell(getPos(), &cell);
   if (! cell) return;
 
   BBox bbox;
@@ -2088,7 +2318,7 @@ Soldier(CFieldRunners *fieldRunners) :
  Runner(fieldRunners), deadFrame_(0)
 {
   if (! imagesLoaded_) {
-    auto *window = fieldRunners_->getWindow();
+    auto *window = this->fieldRunners()->getWindow();
 
     images_[0] = window->loadImage(soldier1_data, SOLDIER1_DATA_LEN);
     images_[1] = window->loadImage(soldier2_data, SOLDIER2_DATA_LEN);
@@ -2150,7 +2380,7 @@ Mercenary(CFieldRunners *fieldRunners) :
  Runner(fieldRunners)
 {
   if (! imagesLoaded_) {
-    auto *window = fieldRunners_->getWindow();
+    auto *window = this->fieldRunners()->getWindow();
 
     images_[0] = window->loadImage(grenade1_data, GRENADE1_DATA_LEN);
     images_[1] = window->loadImage(grenade2_data, GRENADE2_DATA_LEN);
@@ -2184,7 +2414,7 @@ Car(CFieldRunners *fieldRunners) :
  Runner(fieldRunners)
 {
   if (! imageLoaded_) {
-    auto *window = fieldRunners_->getWindow();
+    auto *window = this->fieldRunners()->getWindow();
 
     image_ = window->loadImage(car_data, CAR_DATA_LEN);
 
@@ -2213,7 +2443,7 @@ Tank(CFieldRunners *fieldRunners) :
  Runner(fieldRunners)
 {
   if (! imageLoaded_) {
-    auto *window = fieldRunners_->getWindow();
+    auto *window = this->fieldRunners()->getWindow();
 
     image_ = window->loadImage(tank_data, TANK_DATA_LEN);
 
@@ -2242,7 +2472,7 @@ Helicopter(CFieldRunners *fieldRunners) :
  Runner(fieldRunners)
 {
   if (! imageLoaded_) {
-    auto *window = fieldRunners_->getWindow();
+    auto *window = this->fieldRunners()->getWindow();
 
     image_ = window->loadImage(helicopter_data, HELICOPTER_DATA_LEN);
 
@@ -2259,13 +2489,13 @@ getFrameImage(int)
   return image_;
 }
 
-CFieldRunners::Cell *
+CFieldRunners::FieldCell *
 CFieldRunners::Helicopter::
 searchNext() const
 {
-  Cell *cell;
+  FieldCell *cell;
 
-  fieldRunners_->getCell(goal_, &cell);
+  fieldRunners()->getCell(goal_, &cell);
 
   return cell;
 }
@@ -2282,7 +2512,7 @@ Plane(CFieldRunners *fieldRunners) :
  Runner(fieldRunners)
 {
   if (! imageLoaded_) {
-    auto *window = fieldRunners_->getWindow();
+    auto *window = this->fieldRunners()->getWindow();
 
     image_ = window->loadImage(plane_data, PLANE_DATA_LEN);
 
@@ -2299,13 +2529,13 @@ getFrameImage(int)
   return image_;
 }
 
-CFieldRunners::Cell *
+CFieldRunners::FieldCell *
 CFieldRunners::Plane::
 searchNext() const
 {
-  Cell *cell;
+  FieldCell *cell;
 
-  fieldRunners_->getCell(goal_, &cell);
+  fieldRunners()->getCell(goal_, &cell);
 
   return cell;
 }
@@ -2322,7 +2552,7 @@ Train(CFieldRunners *fieldRunners) :
  Runner(fieldRunners)
 {
   if (! imageLoaded_) {
-    auto *window = fieldRunners_->getWindow();
+    auto *window = this->fieldRunners()->getWindow();
 
     image_ = window->loadImage(plane_data, TRAIN_DATA_LEN);
 
@@ -2339,18 +2569,18 @@ getFrameImage(int)
   return image_;
 }
 
-CFieldRunners::Cell *
+CFieldRunners::FieldCell *
 CFieldRunners::Train::
 searchNext() const
 {
-  Cell *cell;
-  fieldRunners_->getCell(getPos(), &cell);
+  FieldCell *cell;
+  fieldRunners()->getCell(getPos(), &cell);
 
   if (visited_.find(cell) == visited_.end())
     visited_.insert(cell);
 
-  int rows = fieldRunners_->getNumRows();
-  int cols = fieldRunners_->getNumCols();
+  int rows = fieldRunners()->getNumRows();
+  int cols = fieldRunners()->getNumCols();
 
   for (int row = getPos().row - 1; row <= getPos().row + 1; ++row) {
     if (row < 0 || row >= rows) continue;
@@ -2358,8 +2588,8 @@ searchNext() const
     for (int col = getPos().col - 1; col <= getPos().col + 1; ++col) {
       if (col < 0 || col >= cols) continue;
 
-      Cell *cell1;
-      fieldRunners_->getCell(CellPos(row, col), &cell1);
+      FieldCell *cell1;
+      fieldRunners()->getCell(CellPos(row, col), &cell1);
 
       auto *emptyCell = dynamic_cast<EmptyCell *>(cell1);
 
@@ -2386,17 +2616,75 @@ searchNext() const
 
 //-----------
 
-CFieldRunners::Cell::
-Cell(CFieldRunners *fieldRunners, const CellPos &pos) :
- Node(pos), fieldRunners_(fieldRunners), pos_(pos)
+CFieldRunners::FieldCell::
+FieldCell(CFieldRunners *fieldRunners, const CellPos &pos) :
+ Cell(fieldRunners, pos), Node(pos)
 {
 }
 
 CFieldRunnersWindow *
-CFieldRunners::Cell::
+CFieldRunners::FieldCell::
 getWindow() const
 {
-  return fieldRunners_->getWindow();
+  return fieldRunners()->getWindow();
+}
+
+//-----------
+
+CFieldRunners::Cell::
+Cell(CFieldRunners *fieldRunners, const CellPos &pos) :
+ fieldRunners_(fieldRunners), pos_(pos)
+{
+}
+
+//-----------
+
+CFieldRunners::WeaponCell::
+WeaponCell(CFieldRunners *fieldRunners, const CellPos &pos) :
+ FieldCell(fieldRunners, pos)
+{
+}
+
+CFieldRunners::Orient
+CFieldRunners::WeaponCell::
+deltaToOrient(int dx, int dy) const
+{
+  Orient orient = ORIENT_NONE;
+
+  if      (dx < 0) {
+    if      (dy > 0) orient = ORIENT_NW;
+    else if (dy < 0) orient = ORIENT_SW;
+    else             orient = ORIENT_W;
+  }
+  else if (dx > 0) {
+    if      (dy > 0) orient = ORIENT_NE;
+    else if (dy < 0) orient = ORIENT_SE;
+    else             orient = ORIENT_E;
+  }
+  else {
+    if (dy > 0) orient = ORIENT_N;
+    if (dy < 0) orient = ORIENT_S;
+  }
+
+  return orient;
+}
+
+void
+CFieldRunners::WeaponCell::
+setNewOrient(Orient newOrient)
+{
+  int orient1 = int(orient());
+  int orient2 = int(orient());
+
+  while (orient1 != newOrient && orient2 != newOrient) {
+    orient1 = orient1 + 1; if (orient1 > 7) orient1 = 0;
+    orient2 = orient2 - 1; if (orient2 < 0) orient2 = 7;
+  }
+
+  if (orient1 == newOrient)
+    setOrient(Orient(int(orient()) < 7 ? int(orient()) + 1 : 0));
+  else
+    setOrient(Orient(int(orient()) > 0 ? int(orient()) - 1 : 7));
 }
 
 //-----------
@@ -2415,12 +2703,12 @@ bool    CFieldRunners::GunCell::imagesLoaded_;
 
 CFieldRunners::GunCell::
 GunCell(CFieldRunners *fieldRunners, const CellPos &pos) :
- Cell(fieldRunners, pos), orient_(ORIENT_E)
+ WeaponCell(fieldRunners, pos)
 {
-  damage_ = 5;
+  setOrient(ORIENT_E);
 
   if (! imagesLoaded_) {
-    auto *window = fieldRunners_->getWindow();
+    auto *window = this->fieldRunners()->getWindow();
 
     images_[0] = window->loadImage(gun1_data, GUN1_DATA_LEN);
     images_[1] = window->loadImage(gun2_data, GUN2_DATA_LEN);
@@ -2441,47 +2729,20 @@ update()
 {
   // find nearest enemy and if close enough rotate 1 turn to face
   int dist, dx, dy;
-  Runner *minRunner = fieldRunners_->nearestRunner(loc, dist, dx, dy);
+  auto *minRunner = fieldRunners()->nearestRunner(loc, dist, dx, dy);
   if (! minRunner) return;
 
   // too far away
   if (dist > getRange())
     return;
 
-  Orient newOrient = ORIENT_NONE;
-
-  if      (dx < 0) {
-    if      (dy > 0) newOrient = ORIENT_NW;
-    else if (dy < 0) newOrient = ORIENT_SW;
-    else             newOrient = ORIENT_W;
-  }
-  else if (dx > 0) {
-    if      (dy > 0) newOrient = ORIENT_NE;
-    else if (dy < 0) newOrient = ORIENT_SE;
-    else             newOrient = ORIENT_E;
-  }
-  else {
-    if (dy > 0) newOrient = ORIENT_N;
-    if (dy < 0) newOrient = ORIENT_S;
-  }
-
+  auto newOrient = deltaToOrient(dx, dy);
   if (newOrient == ORIENT_NONE) return;
 
-  if (orient() != newOrient) {
-    int orient1 = int(orient());
-    int orient2 = int(orient());
-
-    while (orient1 != newOrient && orient2 != newOrient) {
-      orient1 = orient1 + 1; if (orient1 > 7) orient1 = 0;
-      orient2 = orient2 - 1; if (orient2 < 0) orient2 = 7;
-    }
-
-    if (orient1 == newOrient) orient_ = Orient(int(orient()) < 7 ? int(orient()) + 1 : 0);
-    else                      orient_ = Orient(int(orient()) > 0 ? int(orient()) - 1 : 7);
-  }
-  else {
+  if (orient() != newOrient)
+    setNewOrient(newOrient);
+  else
     minRunner->damage(getDamage());
-  }
 }
 
 void
@@ -2510,10 +2771,12 @@ bool    CFieldRunners::GlueCell::imagesLoaded_;
 
 CFieldRunners::GlueCell::
 GlueCell(CFieldRunners *fieldRunners, const CellPos &pos) :
- Cell(fieldRunners, pos), orient_(ORIENT_E)
+ WeaponCell(fieldRunners, pos)
 {
+  setOrient(ORIENT_E);
+
   if (! imagesLoaded_) {
-    auto *window = fieldRunners_->getWindow();
+    auto *window = this->fieldRunners()->getWindow();
 
     images_[0] = window->loadImage(glue1_data, GLUE1_DATA_LEN);
     images_[1] = window->loadImage(glue2_data, GLUE2_DATA_LEN);
@@ -2534,47 +2797,20 @@ update()
 {
   // find nearest enemy and if close enough rotate 1 turn to face
   int dist, dx, dy;
-  Runner *minRunner = fieldRunners_->nearestRunner(loc, dist, dx, dy);
+  auto *minRunner = fieldRunners()->nearestRunner(loc, dist, dx, dy);
   if (! minRunner) return;
 
   // too far away
   if (dist > getRange())
     return;
 
-  Orient newOrient = ORIENT_NONE;
-
-  if      (dx < 0) {
-    if      (dy > 0) newOrient = ORIENT_NW;
-    else if (dy < 0) newOrient = ORIENT_SW;
-    else             newOrient = ORIENT_W;
-  }
-  else if (dx > 0) {
-    if      (dy > 0) newOrient = ORIENT_NE;
-    else if (dy < 0) newOrient = ORIENT_SE;
-    else             newOrient = ORIENT_E;
-  }
-  else {
-    if (dy > 0) newOrient = ORIENT_N;
-    if (dy < 0) newOrient = ORIENT_S;
-  }
-
+  auto newOrient = deltaToOrient(dx, dy);
   if (newOrient == ORIENT_NONE) return;
 
-  if (orient() != newOrient) {
-    int orient1 = int(orient());
-    int orient2 = int(orient());
-
-    while (orient1 != newOrient && orient2 != newOrient) {
-      orient1 = orient1 + 1; if (orient1 > 7) orient1 = 0;
-      orient2 = orient2 - 1; if (orient2 < 0) orient2 = 7;
-    }
-
-    if (orient1 == newOrient) orient_ = Orient(int(orient()) < 7 ? int(orient()) + 1 : 0);
-    else                      orient_ = Orient(int(orient()) > 0 ? int(orient()) - 1 : 7);
-  }
-  else {
+  if (orient() != newOrient)
+    setNewOrient(newOrient);
+  else
     minRunner->slowDown(60);
-  }
 }
 
 void
@@ -2588,7 +2824,7 @@ draw()
 
 CFieldRunners::SnowbombCell::
 SnowbombCell(CFieldRunners *fieldRunners, const CellPos &pos) :
- Cell(fieldRunners, pos)
+ WeaponCell(fieldRunners, pos)
 {
 }
 
@@ -2620,12 +2856,12 @@ bool    CFieldRunners::MissileCell::imagesLoaded_;
 
 CFieldRunners::MissileCell::
 MissileCell(CFieldRunners *fieldRunners, const CellPos &pos) :
- Cell(fieldRunners, pos), orient_(ORIENT_E)
+ WeaponCell(fieldRunners, pos)
 {
-  damage_ = 10;
+  setOrient(ORIENT_E);
 
   if (! imagesLoaded_) {
-    auto *window = fieldRunners_->getWindow();
+    auto *window = this->fieldRunners()->getWindow();
 
     images_[0] = window->loadImage(missile1_data, MISSILE1_DATA_LEN);
     images_[1] = window->loadImage(missile2_data, MISSILE2_DATA_LEN);
@@ -2646,51 +2882,26 @@ update()
 {
   // find nearest enemy and if close enough rotate 1 turn to face
   int dist, dx, dy;
-  Runner *minRunner = fieldRunners_->nearestRunner(loc, dist, dx, dy);
+  auto *minRunner = fieldRunners()->nearestRunner(loc, dist, dx, dy);
   if (! minRunner) return;
 
   // too far away
   if (dist > getRange())
     return;
 
-  Orient newOrient = ORIENT_NONE;
-
-  if      (dx < 0) {
-    if      (dy > 0) newOrient = ORIENT_NW;
-    else if (dy < 0) newOrient = ORIENT_SW;
-    else             newOrient = ORIENT_W;
-  }
-  else if (dx > 0) {
-    if      (dy > 0) newOrient = ORIENT_NE;
-    else if (dy < 0) newOrient = ORIENT_SE;
-    else             newOrient = ORIENT_E;
-  }
-  else {
-    if (dy > 0) newOrient = ORIENT_N;
-    if (dy < 0) newOrient = ORIENT_S;
-  }
-
+  auto newOrient = deltaToOrient(dx, dy);
   if (newOrient == ORIENT_NONE) return;
 
   if (orient() != newOrient) {
-    int orient1 = int(orient());
-    int orient2 = int(orient());
-
-    while (orient1 != newOrient && orient2 != newOrient) {
-      orient1 = orient1 + 1; if (orient1 > 7) orient1 = 0;
-      orient2 = orient2 - 1; if (orient2 < 0) orient2 = 7;
-    }
-
-    if (orient1 == newOrient) orient_ = Orient(int(orient()) < 7 ? int(orient()) + 1 : 0);
-    else                      orient_ = Orient(int(orient()) > 0 ? int(orient()) - 1 : 7);
+    setNewOrient(newOrient);
   }
   else {
     if (reload_ == 0) {
       Point point;
 
-      fieldRunners_->posToPixel(loc, point);
+      fieldRunners()->posToPixel(loc, 0.5, 0.5, point);
 
-      fieldRunners_->emitRocket(point, minRunner, orient());
+      fieldRunners()->emitRocket(point, minRunner, orient());
 
       reload_ = 12;
     }
@@ -2709,6 +2920,36 @@ draw()
 
 //-----------
 
+CFieldRunners::ShotgunCell::
+ShotgunCell(CFieldRunners *fieldRunners, const CellPos &pos) :
+ WeaponCell(fieldRunners, pos)
+{
+}
+
+void
+CFieldRunners::ShotgunCell::
+update()
+{
+  // find nearest enemy
+  int dist;
+  auto *minRunner = fieldRunners()->nearestRunner(loc, dist);
+  if (! minRunner) return;
+
+  // too far away
+  if (dist > getRange())
+    return;
+
+  minRunner->damage(getDamage());
+}
+
+void
+CFieldRunners::ShotgunCell::
+draw()
+{
+}
+
+//-----------
+
 #include "images/zap_png.h"
 
 ImageId CFieldRunners::ZapCell::image_;
@@ -2716,12 +2957,10 @@ bool    CFieldRunners::ZapCell::imageLoaded_;
 
 CFieldRunners::ZapCell::
 ZapCell(CFieldRunners *fieldRunners, const CellPos &pos) :
- Cell(fieldRunners, pos)
+ WeaponCell(fieldRunners, pos)
 {
-  damage_ = 20;
-
   if (! imageLoaded_) {
-    auto *window = fieldRunners_->getWindow();
+    auto *window = this->fieldRunners()->getWindow();
 
     image_ = window->loadImage(zap_data, ZAP_DATA_LEN);
 
@@ -2735,7 +2974,7 @@ update()
 {
   // find nearest enemy
   int dist;
-  Runner *minRunner = fieldRunners_->nearestRunner(loc, dist);
+  auto *minRunner = fieldRunners()->nearestRunner(loc, dist);
   if (! minRunner) return;
 
   // too far away
@@ -2756,9 +2995,8 @@ draw()
 
 CFieldRunners::PulseCell::
 PulseCell(CFieldRunners *fieldRunners, const CellPos &pos) :
- Cell(fieldRunners, pos)
+ WeaponCell(fieldRunners, pos)
 {
-  damage_ = 15;
 }
 
 void
@@ -2767,14 +3005,28 @@ update()
 {
   // find nearest enemy
   int dist;
-  Runner *minRunner = fieldRunners_->nearestRunner(loc, dist);
+  auto *minRunner = fieldRunners()->nearestRunner(loc, dist);
   if (! minRunner) return;
 
   // too far away
   if (dist > getRange())
     return;
 
-  minRunner->damage(getDamage());
+  if (reload_ == 0) {
+    Point point;
+
+    fieldRunners()->posToPixel(loc, 0.5, 0.5, point);
+
+    fieldRunners()->emitPulseBullet(point, ORIENT_N);
+    fieldRunners()->emitPulseBullet(point, ORIENT_S);
+    fieldRunners()->emitPulseBullet(point, ORIENT_E);
+    fieldRunners()->emitPulseBullet(point, ORIENT_W);
+
+    reload_ = 12;
+  }
+
+  if (reload_ > 0)
+    --reload_;
 }
 
 void
@@ -2787,9 +3039,8 @@ draw()
 
 CFieldRunners::LaserCell::
 LaserCell(CFieldRunners *fieldRunners, const CellPos &pos) :
- Cell(fieldRunners, pos)
+ WeaponCell(fieldRunners, pos)
 {
-  damage_ = 15;
 }
 
 void
@@ -2798,7 +3049,7 @@ update()
 {
   // find nearest enemy
   int dist;
-  Runner *minRunner = fieldRunners_->nearestRunner(loc, dist);
+  auto *minRunner = fieldRunners()->nearestRunner(loc, dist);
   if (! minRunner) return;
 
   // too far away
@@ -2818,9 +3069,8 @@ draw()
 
 CFieldRunners::FirebombCell::
 FirebombCell(CFieldRunners *fieldRunners, const CellPos &pos) :
- Cell(fieldRunners, pos)
+ WeaponCell(fieldRunners, pos)
 {
-  damage_ = 25;
 }
 
 void
@@ -2829,7 +3079,7 @@ update()
 {
   // find nearest enemy
   int dist;
-  Runner *minRunner = fieldRunners_->nearestRunner(loc, dist);
+  auto *minRunner = fieldRunners()->nearestRunner(loc, dist);
   if (! minRunner) return;
 
   // too far away
@@ -2857,7 +3107,7 @@ CFieldRunnersWindow *
 CFieldRunners::Bullet::
 getWindow() const
 {
-  return fieldRunners_->getWindow();
+  return fieldRunners()->getWindow();
 }
 
 //-----------
@@ -2879,7 +3129,7 @@ Rocket(CFieldRunners *fieldRunners, const Point &point, Runner *runner, Orient o
  Bullet(fieldRunners, point), runner_(runner), orient_(orient)
 {
   if (! imagesLoaded_) {
-    auto *window = fieldRunners_->getWindow();
+    auto *window = this->fieldRunners()->getWindow();
 
     images_[0] = window->loadImage(rocket1_data, ROCKET1_DATA_LEN);
     images_[1] = window->loadImage(rocket2_data, ROCKET2_DATA_LEN);
@@ -2906,12 +3156,12 @@ CFieldRunners::Rocket::
 update()
 {
   Size cellSize;
-  fieldRunners_->getCellSize(cellSize);
+  fieldRunners()->getCellSize(cellSize);
 
   const auto &pos = runner_->getPos();
 
   Point point;
-  fieldRunners_->posToPixel(pos, point);
+  fieldRunners()->posToPixel(pos, point);
 
   point.x += cellSize.width /2;
   point.y += cellSize.height/2;
@@ -2945,18 +3195,8 @@ update()
   else if (angle <   -da) newOrient = ORIENT_NE;
   else                    newOrient = ORIENT_E;
 
-  if (orient() != newOrient) {
-    int orient1 = int(orient());
-    int orient2 = int(orient());
-
-    while (orient1 != newOrient && orient2 != newOrient) {
-      orient1 = orient1 + 1; if (orient1 > 7) orient1 = 0;
-      orient2 = orient2 - 1; if (orient2 < 0) orient2 = 7;
-    }
-
-    if (orient1 == newOrient) orient_ = Orient(int(orient()) < 7 ? int(orient()) + 1 : 0);
-    else                      orient_ = Orient(int(orient()) > 0 ? int(orient()) - 1 : 7);
-  }
+  if (orient() != newOrient)
+    setNewOrient(newOrient);
 
   int d = int(0.3*cellSize.width);
 
@@ -2975,9 +3215,54 @@ update()
 
 void
 CFieldRunners::Rocket::
+setNewOrient(Orient newOrient)
+{
+  int orient1 = int(orient());
+  int orient2 = int(orient());
+
+  while (orient1 != newOrient && orient2 != newOrient) {
+    orient1 = orient1 + 1; if (orient1 > 7) orient1 = 0;
+    orient2 = orient2 - 1; if (orient2 < 0) orient2 = 7;
+  }
+
+  if (orient1 == newOrient) setOrient(Orient(int(orient()) < 7 ? int(orient()) + 1 : 0));
+  else                      setOrient(Orient(int(orient()) > 0 ? int(orient()) - 1 : 7));
+}
+
+void
+CFieldRunners::Rocket::
 draw()
 {
   getWindow()->drawImage(point_.x, point_.y, images_[orient()]);
+}
+
+//-----------
+
+CFieldRunners::PulseBullet::
+PulseBullet(CFieldRunners *fieldRunners, const Point &point, Orient orient) :
+ Bullet(fieldRunners, point), orient_(orient)
+{
+}
+
+void
+CFieldRunners::PulseBullet::
+update()
+{
+  Size cellSize;
+  fieldRunners()->getCellSize(cellSize);
+
+  int d = int(0.3*cellSize.width);
+
+  if      (orient() == ORIENT_N) point_.y += d;
+  else if (orient() == ORIENT_S) point_.y -= d;
+  else if (orient() == ORIENT_E) point_.x += d;
+  else if (orient() == ORIENT_W) point_.x -= d;
+}
+
+void
+CFieldRunners::PulseBullet::
+draw()
+{
 }
 
 //-----------
@@ -3014,33 +3299,29 @@ getNextNodes(Node *node) const
 {
   NodeList nodes;
 
-  CFieldRunners::Cell *cell;
+  auto addEmptyCell = [&](const CellPos &pos) {
+    CFieldRunners::FieldCell *cell;
+    fieldRunners()->getCell(pos, &cell);
+
+    if (cell && ! cell->isSolid())
+      nodes.push_back(cell);
+  };
+
+  //---
 
   auto &loc = node->loc;
 
-  if (loc.col > 0) {
-    fieldRunners_->getCell(CellPos(loc.row, loc.col - 1), &cell);
-    if (cell && ! cell->isSolid()) nodes.push_back(cell);
-  }
+  if (loc.col > 0)
+    addEmptyCell(CellPos(loc.row, loc.col - 1));
 
-  //------
+  if (loc.row > 0)
+    addEmptyCell(CellPos(loc.row - 1, loc.col));
 
-  if (loc.row > 0) {
-    fieldRunners_->getCell(CellPos(loc.row - 1, loc.col), &cell);
-    if (cell && ! cell->isSolid()) nodes.push_back(cell);
-  }
+  if (loc.row < fieldRunners()->getNumRows() - 1)
+    addEmptyCell(CellPos(loc.row + 1, loc.col));
 
-  if (loc.row < fieldRunners_->getNumRows() - 1) {
-    fieldRunners_->getCell(CellPos(loc.row + 1, loc.col), &cell);
-    if (cell && ! cell->isSolid()) nodes.push_back(cell);
-  }
-
-  //------
-
-  if (loc.col < fieldRunners_->getNumCols() - 1) {
-    fieldRunners_->getCell(CellPos(loc.row, loc.col + 1), &cell);
-    if (cell && ! cell->isSolid()) nodes.push_back(cell);
-  }
+  if (loc.col < fieldRunners()->getNumCols() - 1)
+    addEmptyCell(CellPos(loc.row, loc.col + 1));
 
   return nodes;
 }
@@ -3049,7 +3330,7 @@ CFieldRunners::SearchField::Node *
 CFieldRunners::SearchField::
 lookupNode(const CellPos &loc) const
 {
-  CFieldRunners::Cell *cell;
-  fieldRunners_->getCell(loc, &cell);
+  CFieldRunners::FieldCell *cell;
+  fieldRunners()->getCell(loc, &cell);
   return cell;
 }

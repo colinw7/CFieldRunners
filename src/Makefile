@@ -484,11 +484,40 @@ compiler_clean: compiler_moc_predefs_clean compiler_moc_header_clean
 		svg/drylands_bg_svg.h \
 		svg/lavaflow_bg_svg.h \
 		svg/skyway_bg_svg.h \
+		svg/mudslide_bg_svg.h \
+		svg/igloo_svg.h \
+		svg/skyway_hole1_svg.h \
+		svg/skyway_hole2_svg.h \
+		svg/skyway_hole3_svg.h \
+		svg/skyway_hole4_svg.h \
+		svg/skyway_hole5_svg.h \
+		svg/skyway_hole6_svg.h \
+		svg/skyway_hole7_svg.h \
+		svg/skyway_hole8_svg.h \
+		svg/skyway_pipe1_svg.h \
+		svg/skyway_pipe_corner_svg.h \
+		svg/mudslide_outcrop1_svg.h \
+		svg/mudslide_outcrop2_svg.h \
+		svg/mudslide_outcrop3_svg.h \
+		svg/mudslide_outcrop4_svg.h \
+		svg/mudslide_outcrop5_svg.h \
+		svg/mudslide_outcrop6_svg.h \
+		svg/pause_button_svg.h \
+		svg/play_button_svg.h \
+		svg/ff_button_svg.h \
+		svg/ff_enabled_button_svg.h \
+		svg/settings_button_svg.h \
 		svg/gun_price_svg.h \
 		svg/glue_price_svg.h \
 		svg/snowbomb_price_svg.h \
 		svg/missile_price_svg.h \
+		svg/shotgun_price_svg.h \
 		svg/zap_price_svg.h \
+		svg/pulse_price_svg.h \
+		svg/laser_price_svg.h \
+		svg/firebomb_price_svg.h \
+		svg/sell_price_svg.h \
+		svg/upgrade_price_svg.h \
 		svg/soldier_svg.h \
 		svg/dead_soldier_svg.h \
 		svg/mercenary_svg.h \
@@ -507,8 +536,10 @@ compiler_clean: compiler_moc_predefs_clean compiler_moc_header_clean
 		svg/crossroads_border_svg.h \
 		svg/frostbite_border_svg.h \
 		svg/drylands_border_svg.h \
+		svg/drylands_border_1_svg.h \
 		svg/lavaflow_border_svg.h \
 		svg/skyway_border_svg.h \
+		svg/mudslide_border_svg.h \
 		svg/track_h_svg.h \
 		svg/track_v_svg.h \
 		svg/track_h_cross_svg.h \
@@ -517,6 +548,8 @@ compiler_clean: compiler_moc_predefs_clean compiler_moc_header_clean
 		svg/track_se_svg.h \
 		svg/track_sw_svg.h \
 		svg/track_nw_svg.h \
+		svg/block_svg.h \
+		svg/rock_svg.h \
 		svg/gun_n_svg.h \
 		svg/gun_ne_svg.h \
 		svg/gun_e_svg.h \
@@ -525,13 +558,15 @@ compiler_clean: compiler_moc_predefs_clean compiler_moc_header_clean
 		svg/gun_sw_svg.h \
 		svg/gun_w_svg.h \
 		svg/gun_nw_svg.h \
-		svg/glue_gun_svg.h \
-		svg/snowbomb_gun_svg.h \
-		svg/missile_gun_svg.h \
-		svg/zap_gun_svg.h \
-		svg/block_svg.h \
-		svg/rock_svg.h \
-		svg/igloo_svg.h \
+		svg/gun_weapon_svg.h \
+		svg/glue_weapon_svg.h \
+		svg/snowbomb_weapon_svg.h \
+		svg/missile_weapon_svg.h \
+		svg/shotgun_weapon_svg.h \
+		svg/zap_weapon_svg.h \
+		svg/pulse_weapon_svg.h \
+		svg/laser_weapon_svg.h \
+		svg/firebomb_weapon_svg.h \
 		svg/missile_bullet_e_svg.h \
 		svg/missile_bullet_ne_svg.h \
 		svg/missile_bullet_n_svg.h \
@@ -540,7 +575,9 @@ compiler_clean: compiler_moc_predefs_clean compiler_moc_header_clean
 		svg/missile_bullet_s_svg.h \
 		svg/missile_bullet_svg.h \
 		svg/missile_bullet_sw_svg.h \
-		svg/missile_bullet_w_svg.h
+		svg/missile_bullet_w_svg.h \
+		svg/pulse_bullet_h_svg.h \
+		svg/pulse_bullet_v_svg.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o ../obj/CQFieldRunners.o CQFieldRunners.cpp
 
 ../obj/CFieldRunners.o: CFieldRunners.cpp CFieldRunners.h \
@@ -549,7 +586,6 @@ compiler_clean: compiler_moc_predefs_clean compiler_moc_header_clean
 		../../CFile/include/CFileBase.h \
 		../../CFile/include/CFileType.h \
 		../../CStrUtil/include/CStrUtil.h \
-		images/field_png.h \
 		images/gun_price_png.h \
 		images/glue_price_png.h \
 		images/missile_price_png.h \
@@ -558,6 +594,7 @@ compiler_clean: compiler_moc_predefs_clean compiler_moc_header_clean
 		images/glue_price_disable_png.h \
 		images/missile_price_disable_png.h \
 		images/zap_price_disable_png.h \
+		images/field_png.h \
 		images/soldier1_png.h \
 		images/soldier2_png.h \
 		images/soldier3_png.h \

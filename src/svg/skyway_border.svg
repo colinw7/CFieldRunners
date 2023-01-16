@@ -24,12 +24,12 @@
      inkscape:document-units="mm"
      showgrid="false"
      inkscape:zoom="1.0489304"
-     inkscape:cx="248.8249"
+     inkscape:cx="243.10479"
      inkscape:cy="602.04185"
      inkscape:window-width="2623"
      inkscape:window-height="1758"
-     inkscape:window-x="943"
-     inkscape:window-y="342"
+     inkscape:window-x="1131"
+     inkscape:window-y="307"
      inkscape:window-maximized="0"
      inkscape:current-layer="layer1"
      width="192mm" />
@@ -40,22 +40,15 @@
      inkscape:groupmode="layer"
      id="layer1">
     <rect
-       style="fill:#696969;stroke-width:53.09;stroke-linecap:square;stroke-dashoffset:1133.77;stop-color:#000000"
-       id="rect1680"
+       style="fill:#8fbc8f;stroke:none;stroke-width:5.00497;stroke-opacity:0.371348;-inkscape-stroke:none;stop-color:#000000"
+       id="rect1039"
        width="192"
        height="192"
-       x="0"
+       x="-5.5511151e-17"
        y="0" />
-    <rect
-       style="fill:#a9a9a9;stroke-width:30.5869;stroke-linecap:square;stroke-dashoffset:1133.77;stop-color:#000000"
-       id="rect939"
-       width="150.20216"
-       height="148.8228"
-       x="20.568918"
-       y="21.254852" />
     <g
        id="g2206"
-       transform="matrix(0.5719422,0,0,0.67177063,75.046222,35.27803)">
+       transform="matrix(0.5719422,0,0,0.67177063,85.886184,13.834521)">
       <rect
          style="fill:#a0522d;stroke-width:30.5869;stroke-linecap:square;stroke-dashoffset:1133.77;stop-color:#000000"
          id="rect2198"
@@ -87,7 +80,7 @@
     </g>
     <g
        id="g2196"
-       transform="matrix(0.63276171,0,0,0.76667041,-11.667265,24.51716)">
+       transform="matrix(0.63276171,0,0,0.76667041,-18.097996,12.268904)">
       <rect
          style="fill:#a0522d;stroke-width:30.5869;stroke-linecap:square;stroke-dashoffset:1133.77;stop-color:#000000"
          id="rect2188"
@@ -119,7 +112,7 @@
     </g>
     <g
        id="g2186"
-       transform="matrix(0.81050216,0,0,0.97780864,6.8809965,38.147809)">
+       transform="matrix(1.0052448,0,0,1.2102421,-4.0790134,30.872503)">
       <rect
          style="fill:#a0522d;stroke-width:30.5869;stroke-linecap:square;stroke-dashoffset:1133.77;stop-color:#000000"
          id="rect2078"

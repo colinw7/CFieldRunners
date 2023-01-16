@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="192mm"
+   height="192mm"
+   viewBox="0 0 192 192"
+   version="1.1"
+   id="svg5"
+   inkscape:version="1.1.2 (0a00cf5339, 2022-02-04)"
+   sodipodi:docname="firebomb_price.svg"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview7"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:document-units="mm"
+     showgrid="false"
+     inkscape:zoom="2.0978608"
+     inkscape:cx="342.73008"
+     inkscape:cy="292.44076"
+     inkscape:window-width="2871"
+     inkscape:window-height="2024"
+     inkscape:window-x="491"
+     inkscape:window-y="54"
+     inkscape:window-maximized="0"
+     inkscape:current-layer="layer1"
+     width="192mm" />
+  <defs
+     id="defs2" />
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1">
+    <ellipse
+       style="fill:#dcdcdc;stroke-width:2.57699;stroke-opacity:0.994211;stop-color:#000000"
+       id="ellipse1124"
+       cx="90.715996"
+       cy="77.61248"
+       rx="73.919334"
+       ry="64.900589" />
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-weight:normal;font-size:62.1278px;font-family:sans-serif;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1.5532"
+       x="57.583511"
+       y="186.20592"
+       id="text2512"
+       transform="scale(1.0705579,0.9340924)"><tspan
+         sodipodi:role="line"
+         id="tspan2510"
+         style="stroke-width:1.5532"
+         x="57.583511"
+         y="186.20592">$90</tspan></text>
+    <ellipse
+       style="fill:#a9a9a9;stroke-width:2.11667;stroke-opacity:0.994211;stop-color:#000000"
+       id="ellipse3561"
+       cx="92.557899"
+       cy="73.73262"
+       rx="60.109554"
+       ry="53.844791" />
+    <ellipse
+       style="fill:#808080;stroke-width:2.11667;stroke-opacity:0.994211;stop-color:#000000"
+       id="path1002"
+       cx="92.703583"
+       cy="62.303242"
+       rx="60.109554"
+       ry="53.844791" />
+    <ellipse
+       style="fill:#ff8c00;stroke-width:2.11667;stroke-opacity:0.994211;stop-color:#000000"
+       id="ellipse3697"
+       cx="92.396278"
+       cy="61.559006"
+       rx="29.242313"
+       ry="28.466866" />
+    <ellipse
+       style="fill:#d2691e;stroke-width:2.11667;stroke-opacity:0.994211;stop-color:#000000"
+       id="path956"
+       cx="91.245689"
+       cy="56.458057"
+       rx="29.242313"
+       ry="28.466866" />
+  </g>
+</svg>

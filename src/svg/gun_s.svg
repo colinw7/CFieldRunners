@@ -25,12 +25,12 @@
      inkscape:document-units="mm"
      showgrid="false"
      inkscape:zoom="1.0489304"
-     inkscape:cx="543.4107"
+     inkscape:cx="537.69058"
      inkscape:cy="292.20242"
      inkscape:window-width="2623"
      inkscape:window-height="1758"
-     inkscape:window-x="462"
-     inkscape:window-y="233"
+     inkscape:window-x="1119"
+     inkscape:window-y="272"
      inkscape:window-maximized="0"
      inkscape:current-layer="layer1"
      width="192mm" />
@@ -98,7 +98,7 @@
      id="layer1">
     <g
        id="g3866"
-       transform="rotate(180,96,85.634144)">
+       transform="rotate(180,96,96)">
       <circle
          style="fill:url(#radialGradient2106);fill-opacity:1;stroke-width:31.2109;stroke-linecap:square;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:1133.77;stop-color:#000000"
          id="path1086"

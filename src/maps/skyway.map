@@ -5,8 +5,9 @@ bgcolor=189,183,107
 bg=skyway
 border=skyway
 
-# char,type,subtype,direction,function
+# char,type,subtype,direction,function,id,attributes
 B,border,none
+b,border,none,none,none,none,transparent
 .,empty,none
 E,empty,none,none,entrance,1
 e,empty,none,none,exit,1
@@ -20,16 +21,16 @@ BBBBBBBBBB....BBBBBBBB.....BB
 BB.........BB.B............BB
 BB.........BB.B............BB
 BB............B............BB
-BBB.BBBB.BB.B.B.BBB.BB.BBB.BB
-BBB.BBBB.BB......BB.BB.BB..BB
-BB...BB...B......B...B.B...BB
+BBB.bbbb.bb.b.B.bbb.bb.bbb.BB
+BBB.bbbb.bb......bb.bb.bb..BB
+BB...bb...b......b...b.bb..BB
 Ea.........................ae
-Fa...BB...B......B...B.....af
-BBB.BBBB.BB......BB.BBB.BB.BB
-BBB.BBBB.BB......BB.BBB.BB.BB
-BB.......BB......B.........BB
+Fa...bb...b......b...b.....af
+BBB.bbbb.bb......bb.bbb.bb.BB
+BBB.bbbb.bb......bb.bbb.bb.BB
+BB.......bb......b.........BB
 BB.........................BB
-BB.......BB......B.........BB
+BB.......bb......B.........BB
 BB...............BBBBBBBBBBBB
 BBBBBBBBBBBBBBBBBBBBBBBBBBBBB
 BBBBBBBBBBBBBBBBBBBBBBBBBBBBB
@@ -72,3 +73,18 @@ G:1:10,G:1:20,G:1:30,G:1:40,G:1:50,G:1:60,G:1:70,G:1:80,G:1:90,G:1:100,G:1:110,G
 B:1:10,B:1:20,B:1:30,B:1:40,B:1:50,B:1:60,B:1:70,B:1:80,B:1:90,B:1:100,B:1:110,B:1:120,B:1:130
 M:1:10,M:1:20,M:1:30,M:1:40,M:1:50,M:1:60,M:1:70,M:1:80,M:1:90,M:1:100,M:1:110,M:1:120,M:1:130,M:1:140,M:1:150,M:1:160,M:1:170,M:1:180,M:1:190,M:1:200,M:1:210,M:1:220,M:1:230,M:1:240,M:1:250
 H:1:10,H:1:20,H:1:30,H:1:40,H:1:50,H:1:60,H:1:70,H:1:80,H:1:90,H:1:100,H:1:110,H:1:120
+
+# annotations <row,col,width,height,id>
+6,4,4,3,skyway_hole1
+10,4,4,3,skyway_hole2
+6,9,2,3,skyway_hole3
+10,9,2,4,skyway_hole4
+6,16,3,3,skyway_hole5
+10,17,2,4,skyway_hole6
+6,20,2,3,skyway_hole3
+10,20,3,3,skyway_hole7
+6,23,3,3,skyway_hole8
+15,9,2,1,skyway_pipe1
+6,12,1,1,skyway_pipe1
+11,24,2,2,skyway_pipe1
+2,10,4,3,skyway_pipe_corner

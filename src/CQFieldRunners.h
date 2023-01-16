@@ -3,13 +3,14 @@
 
 class QLabel;
 class QPainter;
+class QPainterPath;
 class QPaintEvent;
 class QResizeEvent;
 class QMouseEvent;
 class QKeyEvent;
 class QTimer;
 
-class CFieldRunners;
+class CQFieldRunners;
 class CQFieldRunnersCanvas;
 class CQFieldRunnersWindow;
 
@@ -42,7 +43,7 @@ class CQFieldRunnersApp : public QFrame {
   CQFieldRunnersApp();
  ~CQFieldRunnersApp();
 
-  CFieldRunners *fieldRunners() const { return fieldRunners_; }
+  CQFieldRunners *fieldRunners() const { return fieldRunners_; }
 
   void draw(QPainter *painter);
 
@@ -60,7 +61,7 @@ class CQFieldRunnersApp : public QFrame {
  private:
   CQFieldRunnersCanvas*  canvas_       { nullptr };
   CQFieldRunnersWindow*  window_       { nullptr };
-  CFieldRunners*         fieldRunners_ { nullptr };
+  CQFieldRunners*        fieldRunners_ { nullptr };
   QFrame*                status_       { nullptr };
   QLabel*                statusLabel_  { nullptr };
   QTimer*                timer_;
@@ -95,6 +96,8 @@ class CQFieldRunnersCanvas : public CQCanvas2D {
   void fillRectangle(int x1, int y1, int x2, int y2);
 
   void drawEllipse(int x1, int y1, int x2, int y2);
+
+  void drawPath(const QPainterPath &path);
 
   void drawImage(int x, int y, const QImage &image);
 

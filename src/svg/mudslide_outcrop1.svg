@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="192mm"
+   height="192mm"
+   viewBox="0 0 192 192"
+   version="1.1"
+   id="svg5"
+   inkscape:version="1.1.2 (0a00cf5339, 2022-02-04)"
+   sodipodi:docname="mudslide_outcrop1.svg"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview7"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:document-units="mm"
+     showgrid="false"
+     inkscape:zoom="1.4318664"
+     inkscape:cx="364.90835"
+     inkscape:cy="362.11479"
+     inkscape:window-width="2914"
+     inkscape:window-height="1914"
+     inkscape:window-x="659"
+     inkscape:window-y="185"
+     inkscape:window-maximized="0"
+     inkscape:current-layer="layer1"
+     width="192mm" />
+  <defs
+     id="defs2" />
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1">
+    <path
+       style="fill:#556b2f;stroke:#c0c0c0;stroke-width:4.23333;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+       d="M 0.43204554,19.813764 0.1175449,171.78866 l 18.4505671,15.34569 98.667548,5.45098 8,-7.90379 1.50869,-36.08367 18.62016,-15.17321 38.76698,-4.79884 8.15365,-8.76098 L 191.78495,16.325877 181.19651,2.0112539 138.58686,6.6873337 128.08596,17.506096 125.7544,49.415806 115.91659,61.324527 72,64 65.386137,49.364817 65.983814,17.154069 51.145522,3.7673229 18.53274,2.470728 Z"
+       id="path957"
+       sodipodi:nodetypes="ccccccccccccccccccccc" />
+  </g>
+</svg>
