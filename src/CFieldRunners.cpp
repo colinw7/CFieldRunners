@@ -193,6 +193,8 @@ createExit(const CellPos &pos)
   return new Exit(this, pos);
 }
 
+//---
+
 CFieldRunners::Soldier *
 CFieldRunners::
 createSoldier()
@@ -211,6 +213,15 @@ createMercenary()
   return new Mercenary(this);
 }
 
+CFieldRunners::Motorbike *
+CFieldRunners::
+createMotorbike()
+{
+  std::cerr << "createMotorbike\n";
+
+  return new Motorbike(this);
+}
+
 CFieldRunners::Car *
 CFieldRunners::
 createCar()
@@ -218,6 +229,15 @@ createCar()
   std::cerr << "createCar\n";
 
   return new Car(this);
+}
+
+CFieldRunners::Heavybike *
+CFieldRunners::
+createHeavybike()
+{
+  std::cerr << "createHeavybike\n";
+
+  return new Heavybike(this);
 }
 
 CFieldRunners::Tank *
@@ -254,6 +274,15 @@ createTrain()
   std::cerr << "createTrain\n";
 
   return new Train(this);
+}
+
+CFieldRunners::Blimp *
+CFieldRunners::
+createBlimp()
+{
+  std::cerr << "createBlimp\n";
+
+  return new Blimp(this);
 }
 
 //---
@@ -367,6 +396,11 @@ CFieldRunners::Cell *
 CFieldRunners::
 buyCell(const CellPos &pos)
 {
+  auto price = cellPrice(buyCellType_);
+
+  if (player_->getMoney() <= price)
+    return nullptr;
+
   int num_rows = getNumRows();
   int num_cols = getNumCols();
 
@@ -377,23 +411,16 @@ buyCell(const CellPos &pos)
   FieldCell *cell;
   field_->getCell(pos, &cell);
 
-  if (cell && cell->canAddWeapon()) {
-    auto *cell1 = createWeaponCell(buyCellType_, pos);
+  if (! cell || ! cell->canAddWeapon())
+    return nullptr;
 
-    int money = cell1->getBuyPrice();
+  auto *cell1 = createWeaponCell(buyCellType_, pos);
 
-    if (player_->getMoney() >= money) {
-      field_->setCell(pos, cell1);
+  field_->setCell(pos, cell1);
 
-      player_->subMoney(money);
+  player_->subMoney(price);
 
-      return cell1;
-    }
-
-    delete cell1;
-  }
-
-  return nullptr;
+  return cell1;
 }
 
 void
@@ -437,7 +464,7 @@ sellCell(FieldCell *cell)
   player_->addMoney(money);
 }
 
-void
+bool
 CFieldRunners::
 upgradeCell(FieldCell *cell)
 {
@@ -446,16 +473,36 @@ upgradeCell(FieldCell *cell)
   auto *weapon = dynamic_cast<WeaponCell *>(cell);
   assert(weapon);
 
-  if (weapon->level() < 3)
-    weapon->setLevel(weapon->level() + 1);
+  auto price = weapon->getUpgradePrice();
+
+  if (player_->getMoney() <= price)
+    return false;
+
+  if (weapon->level() >= 3)
+    return false;
+
+  weapon->setLevel(weapon->level() + 1);
+
+  player_->subMoney(price);
+
+  return true;
 }
 
 void
 CFieldRunners::
 selectCell(FieldCell *cell)
 {
+  deselectAll();
+
+  cell->setSelected(true);
+}
+
+void
+CFieldRunners::
+deselectAll()
+{
   for (auto *cell1 : field_->cells().cells()) {
-    cell1->setSelected(cell1 == cell);
+    cell1->setSelected(false);
   }
 }
 
@@ -676,6 +723,33 @@ loadMap(const std::string &filename)
       else if (fields[1] == "mudslide"  ) setBorderType(BorderType::MUDSLIDE);
       else return errorMsg("Invalid border type '" + fields[1] + "'");
     }
+    else if (fields[0] == "max_level") {
+      int maxLevels { 0 };
+
+      if (! CStrUtil::toInteger(fields[1], &maxLevels))
+        return errorMsg("Invalid integer '" + fields[1] + "'");
+
+      if (maxLevels > 0)
+        setMaxLevels(uint(maxLevels));
+    }
+    else if (fields[0] == "start_money") {
+      int startMoney { 0 };
+
+      if (! CStrUtil::toInteger(fields[1], &startMoney))
+        return errorMsg("Invalid integer '" + fields[1] + "'");
+
+      if (startMoney > 0)
+        setStartMoney(uint(startMoney));
+    }
+    else if (fields[0] == "start_lives") {
+      int startLives { 0 };
+
+      if (! CStrUtil::toInteger(fields[1], &startLives))
+        return errorMsg("Invalid integer '" + fields[1] + "'");
+
+      if (startLives > 0)
+        setStartLives(uint(startLives));
+    }
     else
       return errorMsg("Invalid def name '" + fields[0] + "'");
   }
@@ -851,13 +925,14 @@ loadMap(const std::string &filename)
 
     if      (fields[1] == "soldier"   ) runnerType = RunnerType::SOLDIER;
     else if (fields[1] == "mercenary" ) runnerType = RunnerType::MERCENARY;
-    else if (fields[1] == "motorbike" ) runnerType = RunnerType::CAR;
+    else if (fields[1] == "motorbike" ) runnerType = RunnerType::MOTORBIKE;
     else if (fields[1] == "car"       ) runnerType = RunnerType::CAR;
-    else if (fields[1] == "heavybike" ) runnerType = RunnerType::TANK;
+    else if (fields[1] == "heavybike" ) runnerType = RunnerType::HEAVYBIKE;
     else if (fields[1] == "tank"      ) runnerType = RunnerType::TANK;
     else if (fields[1] == "helicopter") runnerType = RunnerType::HELICOPTER;
     else if (fields[1] == "plane"     ) runnerType = RunnerType::PLANE;
     else if (fields[1] == "train"     ) runnerType = RunnerType::TRAIN;
+    else if (fields[1] == "blimp"     ) runnerType = RunnerType::BLIMP;
     else return errorMsg("Invalid runner type '" + fields[1] + "'");
 
     charRunner[c] = runnerType;
@@ -1118,6 +1193,23 @@ emitMercenary(const std::string &entranceId)
 
 void
 CFieldRunners::
+emitMotorbike(const std::string &entranceId)
+{
+  auto *motorbike = createMotorbike();
+
+  std::string id = entranceId;
+
+  auto startPos = getStartPos(id);
+  auto endPos   = getEndPos  (id);
+
+  motorbike->setPos (startPos);
+  motorbike->setGoal(endPos);
+
+  runners_.push_back(motorbike);
+}
+
+void
+CFieldRunners::
 emitCar(const std::string &entranceId)
 {
   auto *car = createCar();
@@ -1131,6 +1223,23 @@ emitCar(const std::string &entranceId)
   car->setGoal(endPos);
 
   runners_.push_back(car);
+}
+
+void
+CFieldRunners::
+emitHeavybike(const std::string &entranceId)
+{
+  auto *heavybike = createHeavybike();
+
+  std::string id = entranceId;
+
+  auto startPos = getStartPos(id);
+  auto endPos   = getEndPos  (id);
+
+  heavybike->setPos (startPos);
+  heavybike->setGoal(endPos);
+
+  runners_.push_back(heavybike);
 }
 
 void
@@ -1233,6 +1342,23 @@ emitTrain(const std::string &entranceId)
   runners_.push_back(train);
 }
 
+void
+CFieldRunners::
+emitBlimp(const std::string &entranceId)
+{
+  auto *plane = createBlimp();
+
+  std::string id = entranceId;
+
+  auto startPos = getStartPos(id);
+  auto endPos   = getEndPos  (id);
+
+  plane->setPos (startPos);
+  plane->setGoal(endPos);
+
+  runners_.push_back(plane);
+}
+
 //---
 
 void
@@ -1305,6 +1431,13 @@ CFieldRunners::
 playerAddMoney(int money)
 {
   player_->addMoney(money);
+}
+
+void
+CFieldRunners::
+playerAddScore(int score)
+{
+  player_->addScore(score);
 }
 
 void
@@ -1386,7 +1519,7 @@ update()
                      std::mem_fun(&Runner::isDone)), runners_.end());
 
     if (tick_ > levelTicks_ && runners_.empty()) {
-      if (level_ < 99) {
+      if (level_ < maxLevels()) {
         ++level_;
 
         tick_       = 0;
@@ -1416,53 +1549,41 @@ update()
     if (pl != levelRunners_.end()) {
       for (const auto &runnerData : (*pl).second) {
         if (tick_ == runnerData.ticks) {
-          switch (runnerData.type) {
-            case RunnerType::SOLDIER:
-              emitSoldier(runnerData.entranceId);
-              break;
-            case RunnerType::MERCENARY:
-              emitMercenary(runnerData.entranceId);
-              break;
-            case RunnerType::TRAIN:
-              emitTrain(runnerData.entranceId);
-              break;
-            case RunnerType::CAR:
-              emitCar(runnerData.entranceId);
-              break;
-            case RunnerType::TANK:
-              emitTank(runnerData.entranceId);
-              break;
-            case RunnerType::HELICOPTER:
-              emitHelicopter(runnerData.entranceId);
-              break;
-            case RunnerType::PLANE:
-              emitPlane(runnerData.entranceId);
-              break;
-            default:
-              assert(false);
-              break;
-          }
+          emitRunner(runnerData.type, runnerData.entranceId);
         }
       }
     }
     else {
-      if      (tick_ % 30 == 0)
-        emitSoldier();
-      else if (tick_ % 50 == 0)
-        emitMercenary();
-      else if (tick_ % 55 == 0)
-        emitTrain();
-      else if (tick_ % 70 == 0)
-        emitCar();
-      else if (tick_ % 110 == 0)
-        emitTank();
-      else if (tick_ % 130 == 0)
-        emitPlane();
+      if      (tick_ %  30 == 0) emitRunner(RunnerType::SOLDIER);
+      else if (tick_ %  50 == 0) emitRunner(RunnerType::MERCENARY);
+      else if (tick_ %  55 == 0) emitRunner(RunnerType::TRAIN);
+      else if (tick_ %  70 == 0) emitRunner(RunnerType::CAR);
+      else if (tick_ % 110 == 0) emitRunner(RunnerType::TANK);
+      else if (tick_ % 130 == 0) emitRunner(RunnerType::PLANE);
     }
 
     //------
 
     ++tick_;
+  }
+}
+
+void
+CFieldRunners::
+emitRunner(RunnerType type, std::string entranceId)
+{
+  switch (type) {
+    case RunnerType::SOLDIER   : emitSoldier   (entranceId); break;
+    case RunnerType::MERCENARY : emitMercenary (entranceId); break;
+    case RunnerType::MOTORBIKE : emitMotorbike (entranceId); break;
+    case RunnerType::CAR       : emitCar       (entranceId); break;
+    case RunnerType::HEAVYBIKE : emitHeavybike (entranceId); break;
+    case RunnerType::TANK      : emitTank      (entranceId); break;
+    case RunnerType::HELICOPTER: emitHelicopter(entranceId); break;
+    case RunnerType::PLANE     : emitPlane     (entranceId); break;
+    case RunnerType::TRAIN     : emitTrain     (entranceId); break;
+    case RunnerType::BLIMP     : emitBlimp     (entranceId); break;
+    default: assert(false); break;
   }
 }
 
@@ -1774,8 +1895,10 @@ toString(int i)
 
 CFieldRunners::Player::
 Player(CFieldRunners *fieldRunners) :
- fieldRunners_(fieldRunners), score_(0), lives_(20), money_(1234 /*15*/)
+ fieldRunners_(fieldRunners)
 {
+  money_ = fieldRunners_->startMoney();
+  lives_ = fieldRunners_->startLives();
 }
 
 CFieldRunnersWindow *
@@ -1791,9 +1914,9 @@ draw()
 {
   getWindow()->setForeground(Color(1.0, 1.0, 1.0));
 
-  fieldRunners_->drawMoney(money_);
-  fieldRunners_->drawScore(score_);
-  fieldRunners_->drawLives(lives_);
+  fieldRunners_->drawMoney(getMoney());
+  fieldRunners_->drawScore(getScore());
+  fieldRunners_->drawLives(getLives());
   fieldRunners_->drawLevel(fieldRunners_->getLevel());
 }
 
@@ -2082,15 +2205,17 @@ damage(int damage)
   if (isDying() || isDead())
     return;
 
-  health_ -= damage;
+  setHealth(getHealth() - damage);
 
-  damaged_ = true;
+  setDamaged(true);
 
-  if (health_ <= 0) {
-    dying_  = true;
-    health_ = 0;
+  if (getHealth() <= 0) {
+    setDying(true);
+
+    setHealth(0);
 
     fieldRunners()->playerAddMoney(getDeathMoney());
+    fieldRunners()->playerAddScore(getDeathScore());
   }
 }
 
@@ -2107,11 +2232,11 @@ CFieldRunners::Runner::
 update()
 {
   if (isDying()) {
-    dead_ = updateDying();
+    setDead(updateDying());
     return;
   }
 
-  if (atGoal_ || dead_)
+  if (isAtGoal() || isDead())
     return;
 
   auto *nextCell = searchNext();
@@ -2188,9 +2313,9 @@ update()
     }
 
     // check at goal (exit)
-    atGoal_ = (pos == goal_);
+    setAtGoal(pos == goal_);
 
-    if (atGoal_)
+    if (isAtGoal())
       fieldRunners()->playerLoseLife();
   }
 
@@ -2246,7 +2371,7 @@ draw()
     if (isDamaged()) {
       drawHealthBar(x, y);
 
-      //damaged_ = false;
+      //setDamaged(false);
     }
   }
   else {
@@ -2337,7 +2462,7 @@ Soldier(CFieldRunners *fieldRunners) :
     imagesLoaded_ = true;
   }
 
-  health_ = getMaxHealth();
+  setHealth(getMaxHealth());
 }
 
 ImageId
@@ -2392,7 +2517,7 @@ Mercenary(CFieldRunners *fieldRunners) :
     imagesLoaded_ = true;
   }
 
-  health_ = getMaxHealth();
+  setHealth(getMaxHealth());
 }
 
 ImageId
@@ -2400,6 +2525,22 @@ CFieldRunners::Mercenary::
 getFrameImage(int frame)
 {
   return images_[frame];
+}
+
+//-----------
+
+CFieldRunners::Motorbike::
+Motorbike(CFieldRunners *fieldRunners) :
+ Runner(fieldRunners)
+{
+  setHealth(getMaxHealth());
+}
+
+ImageId
+CFieldRunners::Motorbike::
+getFrameImage(int /*frame*/)
+{
+  return -1;
 }
 
 //-----------
@@ -2421,7 +2562,7 @@ Car(CFieldRunners *fieldRunners) :
     imageLoaded_ = true;
   }
 
-  health_ = getMaxHealth();
+  setHealth(getMaxHealth());
 }
 
 ImageId
@@ -2429,6 +2570,22 @@ CFieldRunners::Car::
 getFrameImage(int)
 {
   return image_;
+}
+
+//-----------
+
+CFieldRunners::Heavybike::
+Heavybike(CFieldRunners *fieldRunners) :
+ Runner(fieldRunners)
+{
+  setHealth(getMaxHealth());
+}
+
+ImageId
+CFieldRunners::Heavybike::
+getFrameImage(int /*frame*/)
+{
+  return -1;
 }
 
 //-----------
@@ -2450,7 +2607,7 @@ Tank(CFieldRunners *fieldRunners) :
     imageLoaded_ = true;
   }
 
-  health_ = getMaxHealth();
+  setHealth(getMaxHealth());
 }
 
 ImageId
@@ -2479,7 +2636,7 @@ Helicopter(CFieldRunners *fieldRunners) :
     imageLoaded_ = true;
   }
 
-  health_ = getMaxHealth();
+  setHealth(getMaxHealth());
 }
 
 ImageId
@@ -2519,7 +2676,7 @@ Plane(CFieldRunners *fieldRunners) :
     imageLoaded_ = true;
   }
 
-  health_ = getMaxHealth();
+  setHealth(getMaxHealth());
 }
 
 ImageId
@@ -2559,7 +2716,7 @@ Train(CFieldRunners *fieldRunners) :
     imageLoaded_ = true;
   }
 
-  health_ = getMaxHealth();
+  setHealth(getMaxHealth());
 }
 
 ImageId
@@ -2612,6 +2769,33 @@ searchNext() const
   }
 
   return nullptr;
+}
+
+//-----------
+
+CFieldRunners::Blimp::
+Blimp(CFieldRunners *fieldRunners) :
+ Runner(fieldRunners)
+{
+  setHealth(getMaxHealth());
+}
+
+ImageId
+CFieldRunners::Blimp::
+getFrameImage(int /*frame*/)
+{
+  return -1;
+}
+
+CFieldRunners::FieldCell *
+CFieldRunners::Blimp::
+searchNext() const
+{
+  FieldCell *cell;
+
+  fieldRunners()->getCell(goal_, &cell);
+
+  return cell;
 }
 
 //-----------
@@ -3099,7 +3283,7 @@ draw()
 
 CFieldRunners::Bullet::
 Bullet(CFieldRunners *fieldRunners, const Point &point) :
- fieldRunners_(fieldRunners), point_(point), atGoal_(false)
+ fieldRunners_(fieldRunners), point_(point)
 {
 }
 
@@ -3172,7 +3356,7 @@ update()
   int dhit = cellSize.width/2;
 
   if (abs(dx) < dhit && abs(dy) < dhit) {
-    atGoal_ = true;
+    setAtGoal(true);
 
     runner_->damage(getDamage());
 

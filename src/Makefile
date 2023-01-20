@@ -522,14 +522,18 @@ compiler_clean: compiler_moc_predefs_clean compiler_moc_header_clean
 		svg/dead_soldier_svg.h \
 		svg/mercenary_svg.h \
 		svg/dead_mercenary_svg.h \
+		svg/motorbike_svg.h \
 		svg/car_svg.h \
 		svg/dead_car_svg.h \
+		svg/heavybike_svg.h \
 		svg/tank_svg.h \
 		svg/dead_tank_svg.h \
+		svg/helicopter_svg.h \
 		svg/plane_svg.h \
 		svg/dead_plane_svg.h \
 		svg/train_svg.h \
 		svg/dead_train_svg.h \
+		svg/blimp_svg.h \
 		svg/border_svg.h \
 		svg/grasslands_border_svg.h \
 		svg/crystal_border_svg.h \
@@ -669,20 +673,11 @@ compiler_clean: compiler_moc_predefs_clean compiler_moc_header_clean
 		../../CUtil/include/CEvent.h \
 		../../CUtil/include/CKeyType.h \
 		../../CQUtil/include/CQUtil.h \
-		../../CUtil/include/CRGBA.h \
-		../../CUtil/include/CRGB.h \
-		../../CUtil/include/CRGBName.h \
-		../../CUtil/include/CLineDash.h \
-		../../CUtil/include/CILineDash.h \
-		../../CMath/include/CAngle.h \
-		../../CFont/include/CFontStyle.h \
-		../../CUtil/include/CFlags.h \
-		../../CUtil/include/CLineCapType.h \
-		../../CUtil/include/CLineJoinType.h \
+		../../CQUtil/include/CQUtilMeta.h \
+		../../CQUtil/include/CQUtilGeom.h \
 		../../CMath/include/CIBBox2D.h \
 		../../CMath/include/CIVector2D.h \
-		../../CUtil/include/CAlignType.h \
-		../../CQUtil/include/CQUtilMeta.h
+		../../CQUtil/include/CQUtilEvent.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o ../obj/CQCanvas2D.o CQCanvas2D.cpp
 
 ../obj/moc_CQFieldRunners.o: moc_CQFieldRunners.cpp 

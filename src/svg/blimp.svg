@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="192mm"
+   height="192mm"
+   viewBox="0 0 192 192"
+   version="1.1"
+   id="svg5"
+   inkscape:version="1.1.2 (0a00cf5339, 2022-02-04)"
+   sodipodi:docname="blimp.svg"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview7"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:document-units="mm"
+     showgrid="false"
+     inkscape:zoom="1.0489304"
+     inkscape:cx="285.05228"
+     inkscape:cy="602.04185"
+     inkscape:window-width="3052"
+     inkscape:window-height="1850"
+     inkscape:window-x="1050"
+     inkscape:window-y="125"
+     inkscape:window-maximized="0"
+     inkscape:current-layer="layer1"
+     width="192mm" />
+  <defs
+     id="defs2" />
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1">
+    <path
+       id="path927"
+       style="stroke:#000000;stroke-width:1.08715;stop-color:#000000;fill:#2e8b57"
+       d="M 44.818359 167.88672 L 45.287109 311.13086 A 349.7142 125.11771 0 0 0 12.753906 363.68164 A 349.7142 125.11771 0 0 0 54.957031 423.04492 L 56.154297 536.50977 L 184.7793 471.19727 A 349.7142 125.11771 0 0 0 256.80664 482.89258 L 256.80664 568.32812 L 491.75781 568.32812 L 491.75781 479.88672 A 349.7142 125.11771 0 0 0 712.18164 363.68164 A 349.7142 125.11771 0 0 0 362.4668 238.56445 A 349.7142 125.11771 0 0 0 225.01367 248.67578 L 44.818359 167.88672 z M 387.85938 500.36328 L 444.0918 500.36328 L 444.0918 533.19531 L 387.85938 533.19531 L 387.85938 500.36328 z M 300.32617 501.63672 L 356.56055 501.63672 L 356.56055 534.46875 L 300.32617 534.46875 L 300.32617 501.63672 z "
+       transform="scale(0.26458333)" />
+  </g>
+</svg>

@@ -1,7 +1,7 @@
 #include <CQCanvas2D.h>
 #include <CQUtil.h>
-//#include <CQUtilGeom.h>
-//#include <CQUtilEvent.h>
+#include <CQUtilGeom.h>
+#include <CQUtilEvent.h>
 
 #include <QPainter>
 

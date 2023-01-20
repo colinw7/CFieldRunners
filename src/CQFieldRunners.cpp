@@ -28,18 +28,6 @@ class CQFieldRunners : public CFieldRunners {
 
   Field *createField() override;
 
-  Soldier *createSoldier() override;
-
-  Mercenary *createMercenary() override;
-
-  Car *createCar() override;
-
-  Tank *createTank() override;
-
-  Plane *createPlane() override;
-
-  Train *createTrain() override;
-
   EmptyCell  *createEmptyCell (const CellPos &pos) override;
   BorderCell *createBorderCell(const CellPos &pos) override;
   BlockCell  *createBlockCell (const CellPos &pos) override;
@@ -56,6 +44,17 @@ class CQFieldRunners : public CFieldRunners {
 
   Entrance *createEntrance(const CellPos &pos) override;
   Exit     *createExit    (const CellPos &pos) override;
+
+  Soldier    *createSoldier   () override;
+  Mercenary  *createMercenary () override;
+  Motorbike  *createMotorbike () override;
+  Car        *createCar       () override;
+  Heavybike  *createHeavybike () override;
+  Tank       *createTank      () override;
+  Helicopter *createHelicopter() override;
+  Plane      *createPlane     () override;
+  Train      *createTrain     () override;
+  Blimp      *createBlimp     () override;
 
   Rocket *createRocket(const Point &point, Runner *runner, Orient orient) override;
 
@@ -100,12 +99,6 @@ class CQFieldRunners : public CFieldRunners {
 
  public:
   friend class CQFieldRunnersField;
-  friend class CQFieldRunnersSoldier;
-  friend class CQFieldRunnersMercenary;
-  friend class CQFieldRunnersCar;
-  friend class CQFieldRunnersTank;
-  friend class CQFieldRunnersPlane;
-  friend class CQFieldRunnersTrain;
 
   friend class CQFieldRunnersEmpty;
   friend class CQFieldRunnersBorder;
@@ -124,6 +117,17 @@ class CQFieldRunners : public CFieldRunners {
   friend class CQFieldRunnersEntrance;
   friend class CQFieldRunnersExit;
 
+  friend class CQFieldRunnersSoldier;
+  friend class CQFieldRunnersMercenary;
+  friend class CQFieldRunnersMotorbike;
+  friend class CQFieldRunnersCar;
+  friend class CQFieldRunnersHeavybike;
+  friend class CQFieldRunnersTank;
+  friend class CQFieldRunnersHelicopter;
+  friend class CQFieldRunnersPlane;
+  friend class CQFieldRunnersTrain;
+  friend class CQFieldRunnersBlimp;
+
   friend class CQFieldRunnersRocket;
   friend class CQFieldRunnersPulseBullet;
 
@@ -136,6 +140,8 @@ class CQFieldRunners : public CFieldRunners {
   QRect                 settingsRect_;
   Rects                 weaponRects_;
 };
+
+//---
 
 class CQFieldRunnersField : public CQFieldRunners::Field {
  public:
@@ -159,65 +165,7 @@ class CQFieldRunnersField : public CQFieldRunners::Field {
   QRect           upgradeRect_;
 };
 
-class CQFieldRunnersSoldier : public CQFieldRunners::Soldier {
- public:
-  CQFieldRunnersSoldier(CQFieldRunners *qFieldRunners);
-
-  void draw() override;
-
- private:
-  CQFieldRunners *qFieldRunners_;
-};
-
-class CQFieldRunnersMercenary : public CQFieldRunners::Mercenary {
- public:
-  CQFieldRunnersMercenary(CQFieldRunners *qFieldRunners);
-
-  void draw() override;
-
- private:
-  CQFieldRunners *qFieldRunners_;
-};
-
-class CQFieldRunnersCar : public CQFieldRunners::Car {
- public:
-  CQFieldRunnersCar(CQFieldRunners *fieldRunners);
-
-  void draw() override;
-
- private:
-  CQFieldRunners *qFieldRunners_;
-};
-
-class CQFieldRunnersTank : public CQFieldRunners::Tank {
- public:
-  CQFieldRunnersTank(CQFieldRunners *fieldRunners);
-
-  void draw() override;
-
- private:
-  CQFieldRunners *qFieldRunners_;
-};
-
-class CQFieldRunnersPlane : public CQFieldRunners::Plane {
- public:
-  CQFieldRunnersPlane(CQFieldRunners *fieldRunners);
-
-  void draw() override;
-
- private:
-  CQFieldRunners *qFieldRunners_;
-};
-
-class CQFieldRunnersTrain : public CQFieldRunners::Train {
- public:
-  CQFieldRunnersTrain(CQFieldRunners *fieldRunners);
-
-  void draw() override;
-
- private:
-  CQFieldRunners *qFieldRunners_;
-};
+//---
 
 class CQFieldRunnersEmpty : public CQFieldRunners::EmptyCell {
  public:
@@ -248,6 +196,8 @@ class CQFieldRunnersBlock : public CQFieldRunners::BlockCell {
  private:
   CQFieldRunners *qFieldRunners_;
 };
+
+//---
 
 class CQFieldRunnersGun : public CQFieldRunners::GunCell {
  public:
@@ -339,6 +289,8 @@ class CQFieldRunnersFirebomb : public CQFieldRunners::FirebombCell {
   CQFieldRunners *qFieldRunners_;
 };
 
+//---
+
 class CQFieldRunnersEntrance : public CQFieldRunners::Entrance {
  public:
   CQFieldRunnersEntrance(CQFieldRunners *qFieldRunners, const CFieldRunners::CellPos &pos);
@@ -350,6 +302,108 @@ class CQFieldRunnersEntrance : public CQFieldRunners::Entrance {
 class CQFieldRunnersExit : public CQFieldRunners::Exit {
  public:
   CQFieldRunnersExit(CQFieldRunners *qFieldRunners, const CFieldRunners::CellPos &pos);
+
+ private:
+  CQFieldRunners *qFieldRunners_;
+};
+
+//---
+
+class CQFieldRunnersSoldier : public CQFieldRunners::Soldier {
+ public:
+  CQFieldRunnersSoldier(CQFieldRunners *qFieldRunners);
+
+  void draw() override;
+
+ private:
+  CQFieldRunners *qFieldRunners_;
+};
+
+class CQFieldRunnersMercenary : public CQFieldRunners::Mercenary {
+ public:
+  CQFieldRunnersMercenary(CQFieldRunners *qFieldRunners);
+
+  void draw() override;
+
+ private:
+  CQFieldRunners *qFieldRunners_;
+};
+
+class CQFieldRunnersMotorbike : public CQFieldRunners::Motorbike {
+ public:
+  CQFieldRunnersMotorbike(CQFieldRunners *qFieldRunners);
+
+  void draw() override;
+
+ private:
+  CQFieldRunners *qFieldRunners_;
+};
+
+class CQFieldRunnersCar : public CQFieldRunners::Car {
+ public:
+  CQFieldRunnersCar(CQFieldRunners *fieldRunners);
+
+  void draw() override;
+
+ private:
+  CQFieldRunners *qFieldRunners_;
+};
+
+class CQFieldRunnersHeavybike : public CQFieldRunners::Heavybike {
+ public:
+  CQFieldRunnersHeavybike(CQFieldRunners *qFieldRunners);
+
+  void draw() override;
+
+ private:
+  CQFieldRunners *qFieldRunners_;
+};
+
+class CQFieldRunnersTank : public CQFieldRunners::Tank {
+ public:
+  CQFieldRunnersTank(CQFieldRunners *fieldRunners);
+
+  void draw() override;
+
+ private:
+  CQFieldRunners *qFieldRunners_;
+};
+
+class CQFieldRunnersHelicopter : public CQFieldRunners::Helicopter {
+ public:
+  CQFieldRunnersHelicopter(CQFieldRunners *fieldRunners);
+
+  void draw() override;
+
+ private:
+  CQFieldRunners *qFieldRunners_;
+};
+
+class CQFieldRunnersPlane : public CQFieldRunners::Plane {
+ public:
+  CQFieldRunnersPlane(CQFieldRunners *fieldRunners);
+
+  void draw() override;
+
+ private:
+  CQFieldRunners *qFieldRunners_;
+};
+
+class CQFieldRunnersTrain : public CQFieldRunners::Train {
+ public:
+  CQFieldRunnersTrain(CQFieldRunners *fieldRunners);
+
+  void draw() override;
+
+ private:
+  CQFieldRunners *qFieldRunners_;
+};
+
+class CQFieldRunnersBlimp : public CQFieldRunners::Blimp {
+ public:
+  CQFieldRunnersBlimp(CQFieldRunners *fieldRunners);
+
+  void draw() override;
 
  private:
   CQFieldRunners *qFieldRunners_;
@@ -642,6 +696,11 @@ mousePress(QMouseEvent *event)
 
   if (qfield->sellRect().contains(epos)) {
     fieldRunners_->sellCell(CFieldRunners::CellPos(pos.row, pos.col + 1));
+
+    fieldRunners_->deselectAll();
+
+    canvas_->setChanged();
+
     return;
   }
 
@@ -650,6 +709,11 @@ mousePress(QMouseEvent *event)
     fieldRunners_->getCell(CFieldRunners::CellPos(pos.row, pos.col - 1), &upgradeCell);
 
     fieldRunners_->upgradeCell(upgradeCell);
+
+    fieldRunners_->deselectAll();
+
+    canvas_->setChanged();
+
     return;
   }
 
@@ -670,11 +734,11 @@ mousePress(QMouseEvent *event)
     canvas_->setChanged();
   }
   else if (event->button() == Qt::RightButton) {
-    if (mouseCell && mouseCell->isWeapon()) {
-      fieldRunners_->sellCell(pos);
+    //if (mouseCell && mouseCell->isWeapon()) {
+    //  fieldRunners_->sellCell(pos);
 
-      canvas_->setChanged();
-    }
+    //  canvas_->setChanged();
+    //}
   }
   else if (event->button() == Qt::MiddleButton) {
     if (! mouseCell || ! mouseCell->canAddWeapon())
@@ -914,6 +978,8 @@ CQFieldRunners(CQFieldRunnersWindow *qWindow) :
 {
 }
 
+//---
+
 CFieldRunners::Field *
 CQFieldRunners::
 createField()
@@ -921,47 +987,7 @@ createField()
   return new CQFieldRunnersField(this);
 }
 
-CFieldRunners::Soldier *
-CQFieldRunners::
-createSoldier()
-{
-  return new CQFieldRunnersSoldier(this);
-}
-
-CFieldRunners::Mercenary *
-CQFieldRunners::
-createMercenary()
-{
-  return new CQFieldRunnersMercenary(this);
-}
-
-CFieldRunners::Car *
-CQFieldRunners::
-createCar()
-{
-  return new CQFieldRunnersCar(this);
-}
-
-CFieldRunners::Tank *
-CQFieldRunners::
-createTank()
-{
-  return new CQFieldRunnersTank(this);
-}
-
-CFieldRunners::Plane *
-CQFieldRunners::
-createPlane()
-{
-  return new CQFieldRunnersPlane(this);
-}
-
-CFieldRunners::Train *
-CQFieldRunners::
-createTrain()
-{
-  return new CQFieldRunnersTrain(this);
-}
+//---
 
 CFieldRunners::EmptyCell *
 CQFieldRunners::
@@ -983,6 +1009,8 @@ createBlockCell(const CellPos &pos)
 {
   return new CQFieldRunnersBlock(this, pos);
 }
+
+//---
 
 CFieldRunners::GunCell *
 CQFieldRunners::
@@ -1047,6 +1075,8 @@ createFirebombCell(const CellPos &pos)
   return new CQFieldRunnersFirebomb(this, pos);
 }
 
+//---
+
 CFieldRunners::Entrance *
 CQFieldRunners::
 createEntrance(const CellPos &pos)
@@ -1059,6 +1089,78 @@ CQFieldRunners::
 createExit(const CellPos &pos)
 {
   return new CQFieldRunnersExit(this, pos);
+}
+
+//---
+
+CFieldRunners::Soldier *
+CQFieldRunners::
+createSoldier()
+{
+  return new CQFieldRunnersSoldier(this);
+}
+
+CFieldRunners::Mercenary *
+CQFieldRunners::
+createMercenary()
+{
+  return new CQFieldRunnersMercenary(this);
+}
+
+CFieldRunners::Motorbike *
+CQFieldRunners::
+createMotorbike()
+{
+  return new CQFieldRunnersMotorbike(this);
+}
+
+CFieldRunners::Car *
+CQFieldRunners::
+createCar()
+{
+  return new CQFieldRunnersCar(this);
+}
+
+CFieldRunners::Heavybike *
+CQFieldRunners::
+createHeavybike()
+{
+  return new CQFieldRunnersHeavybike(this);
+}
+
+CFieldRunners::Tank *
+CQFieldRunners::
+createTank()
+{
+  return new CQFieldRunnersTank(this);
+}
+
+CFieldRunners::Plane *
+CQFieldRunners::
+createPlane()
+{
+  return new CQFieldRunnersPlane(this);
+}
+
+CFieldRunners::Helicopter *
+CQFieldRunners::
+createHelicopter()
+{
+  return new CQFieldRunnersHelicopter(this);
+}
+
+CFieldRunners::Train *
+CQFieldRunners::
+createTrain()
+{
+  return new CQFieldRunnersTrain(this);
+}
+
+CFieldRunners::Blimp *
+CQFieldRunners::
+createBlimp()
+{
+  return new CQFieldRunnersBlimp(this);
 }
 
 //---
@@ -1178,14 +1280,14 @@ drawMoney(int money)
 {
   auto *canvas = qWindow()->canvas();
 
-  QFontMetrics fm(qWindow_->app()->font());
+  QFontMetrics fm(qWindow()->app()->font());
 
   auto text = QString("$%1").arg(money);
 
   int x = 4;
   int y = fm.ascent();
 
-  canvas->setFont(qWindow_->app()->font());
+  canvas->setFont(qWindow()->app()->font());
 
   canvas->drawContrastText(x, y, text, canvas->mapColor(bgColor()), canvas->mapColor(fgColor()));
 }
@@ -1196,14 +1298,14 @@ drawLives(int lives)
 {
   auto *canvas = qWindow()->canvas();
 
-  QFontMetrics fm(qWindow_->app()->font());
+  QFontMetrics fm(qWindow()->app()->font());
 
   auto text = QString("Lives %1").arg(lives);
 
   int x = canvas->width()/2 - fm.horizontalAdvance(text)/2;
   int y = fm.ascent();
 
-  canvas->setFont(qWindow_->app()->font());
+  canvas->setFont(qWindow()->app()->font());
 
   canvas->drawContrastText(x, y, text, canvas->mapColor(bgColor()), canvas->mapColor(fgColor()));
 }
@@ -1214,14 +1316,14 @@ drawScore(int score)
 {
   auto *canvas = qWindow()->canvas();
 
-  QFontMetrics fm(qWindow_->app()->font());
+  QFontMetrics fm(qWindow()->app()->font());
 
   auto text = QString("Score %1").arg(score);
 
   int x = canvas->width() - fm.horizontalAdvance(text) - 4;
   int y = fm.ascent();
 
-  canvas->setFont(qWindow_->app()->font());
+  canvas->setFont(qWindow()->app()->font());
 
   canvas->drawContrastText(x, y, text, canvas->mapColor(bgColor()), canvas->mapColor(fgColor()));
 }
@@ -1232,14 +1334,14 @@ drawLevel(int level)
 {
   auto *canvas = qWindow()->canvas();
 
-  QFontMetrics fm(qWindow_->app()->font());
+  QFontMetrics fm(qWindow()->app()->font());
 
   auto text = QString("Level %1").arg(level);
 
   int x = canvas->width()/2 - fm.horizontalAdvance(text)/2;
   int y = fm.height() + fm.ascent();
 
-  canvas->setFont(qWindow_->app()->font());
+  canvas->setFont(qWindow()->app()->font());
 
   canvas->drawContrastText(x, y, text, canvas->mapColor(bgColor()), canvas->mapColor(fgColor()));
 }
@@ -1547,10 +1649,20 @@ drawSelected(CFieldRunners::FieldCell *cell)
   image = s_SELL_PRICE_SVG.image(w, h);
   canvas->drawImage(x - w, y, image);
 
+  auto sellStr = QString("$%1").arg(weaponCell->getSellPrice());
+
+  QFontMetrics fm(qFieldRunners()->qWindow()->app()->font());
+
+  canvas->drawText(x - fm.horizontalAdvance(sellStr), y + h - fm.descent(), sellStr);
+
   sellRect_ = QRect(x - w, y, w, h);
 
   image = s_UPGRADE_PRICE_SVG.image(w, h);
   canvas->drawImage(x + w, y, image);
+
+  auto upgradeStr = QString("$%1").arg(weaponCell->getUpgradePrice());
+
+  canvas->drawText(x + 2*w - fm.horizontalAdvance(sellStr), y + h - fm.descent(), upgradeStr);
 
   upgradeRect_ = QRect(x + w, y, w, h);
 }
@@ -1632,6 +1744,41 @@ draw()
 
 //------
 
+#include <svg/motorbike_svg.h>
+
+CQFieldRunnersMotorbike::
+CQFieldRunnersMotorbike(CQFieldRunners *qFieldRunners) :
+ CFieldRunners::Motorbike(qFieldRunners), qFieldRunners_(qFieldRunners)
+{
+}
+
+void
+CQFieldRunnersMotorbike::
+draw()
+{
+  int x, y;
+  getXYPos(x, y);
+
+  Size cellSize;
+  fieldRunners()->getCellSize(cellSize);
+
+  auto *canvas = qFieldRunners_->qWindow()->canvas();
+
+  if      (! isDying()) {
+    auto image = s_MOTORBIKE_SVG.image(cellSize.width, cellSize.height);
+    canvas->drawImage(x, y, image);
+
+    if (isDamaged())
+      drawHealthBar(x, y);
+  }
+  else if (! isDead()) {
+    //auto image = s_DEAD_MOTORBIKE_SVG.image(cellSize.width, cellSize.height);
+    //canvas->drawImage(x, y, image);
+  }
+}
+
+//------
+
 #include <svg/car_svg.h>
 #include <svg/dead_car_svg.h>
 
@@ -1668,6 +1815,41 @@ draw()
 
 //------
 
+#include <svg/heavybike_svg.h>
+
+CQFieldRunnersHeavybike::
+CQFieldRunnersHeavybike(CQFieldRunners *qFieldRunners) :
+ CFieldRunners::Heavybike(qFieldRunners), qFieldRunners_(qFieldRunners)
+{
+}
+
+void
+CQFieldRunnersHeavybike::
+draw()
+{
+  int x, y;
+  getXYPos(x, y);
+
+  Size cellSize;
+  fieldRunners()->getCellSize(cellSize);
+
+  auto *canvas = qFieldRunners_->qWindow()->canvas();
+
+  if      (! isDying()) {
+    auto image = s_HEAVYBIKE_SVG.image(cellSize.width, cellSize.height);
+    canvas->drawImage(x, y, image);
+
+    if (isDamaged())
+      drawHealthBar(x, y);
+  }
+  else if (! isDead()) {
+    //auto image = s_DEAD_HEAVYBIKE_SVG.image(cellSize.width, cellSize.height);
+    //canvas->drawImage(x, y, image);
+  }
+}
+
+//------
+
 #include <svg/tank_svg.h>
 #include <svg/dead_tank_svg.h>
 
@@ -1699,6 +1881,41 @@ draw()
   else if (! isDead()) {
     auto image = s_DEAD_TANK_SVG.image(cellSize.width, cellSize.height);
     canvas->drawImage(x, y, image);
+  }
+}
+
+//------
+
+#include <svg/helicopter_svg.h>
+
+CQFieldRunnersHelicopter::
+CQFieldRunnersHelicopter(CQFieldRunners *fieldRunners) :
+ CFieldRunners::Helicopter(fieldRunners), qFieldRunners_(fieldRunners)
+{
+}
+
+void
+CQFieldRunnersHelicopter::
+draw()
+{
+  int x, y;
+  getXYPos(x, y);
+
+  Size cellSize;
+  fieldRunners()->getCellSize(cellSize);
+
+  auto *canvas = qFieldRunners_->qWindow()->canvas();
+
+  if      (! isDying()) {
+    auto image = s_HELICOPTER_SVG.image(cellSize.width, cellSize.height);
+    canvas->drawImage(x, y, image);
+
+    if (isDamaged())
+      drawHealthBar(x, y);
+  }
+  else if (! isDead()) {
+    //auto image = s_DEAD_MOTORBIKE_SVG.image(cellSize.width, cellSize.height);
+    //canvas->drawImage(x, y, image);
   }
 }
 
@@ -1771,6 +1988,37 @@ draw()
   else if (! isDead()) {
     auto image = s_DEAD_TRAIN_SVG.image(cellSize.width, cellSize.height);
     canvas->drawImage(x, y, image);
+  }
+}
+
+//------
+
+#include <svg/blimp_svg.h>
+
+CQFieldRunnersBlimp::
+CQFieldRunnersBlimp(CQFieldRunners *fieldRunners) :
+ CFieldRunners::Blimp(fieldRunners), qFieldRunners_(fieldRunners)
+{
+}
+
+void
+CQFieldRunnersBlimp::
+draw()
+{
+  int x, y;
+  getXYPos(x, y);
+
+  Size cellSize;
+  fieldRunners()->getCellSize(cellSize);
+
+  auto *canvas = qFieldRunners_->qWindow()->canvas();
+
+  if      (! isDying()) {
+    auto image = s_BLIMP_SVG.image(cellSize.width, cellSize.height);
+    canvas->drawImage(x, y, image);
+
+    if (isDamaged())
+      drawHealthBar(x, y);
   }
 }
 
@@ -2061,8 +2309,8 @@ draw()
     canvas->drawPath(path);
   };
 
-  canvas->setForeground(QColor(255, 0, 0));
-  canvas->setBackground(QColor(255, 0, 0));
+  canvas->setForeground(QColor(100, 100, 100));
+  canvas->setBackground(QColor(100, 100, 100));
 
   auto da = M_PI/10;
 

@@ -246,7 +246,9 @@ class CFieldRunners {
     NONE,
     SOLDIER,
     MERCENARY,
+    MOTORBIKE,
     CAR,
+    HEAVYBIKE,
     TANK,
     HELICOPTER,
     PLANE,
@@ -417,11 +419,10 @@ class CFieldRunners {
 
     bool isWeapon() const override { return true; }
 
-    //! buy price
-    virtual int getBuyPrice() const = 0;
-
-    //! sell price
-    virtual int getSellPrice() const = 0;
+    //! buy/sell/upgrade price
+    virtual int getBuyPrice    () const = 0;
+    virtual int getSellPrice   () const = 0;
+    virtual int getUpgradePrice() const = 0;
 
     // get damage weapon makes on hit
     virtual int getDamage() const = 0;
@@ -459,12 +460,22 @@ class CFieldRunners {
     int getBuyPrice() const override { return buyPrice(); }
 
     //! sell price
-    int getSellPrice() const override { return 3; }
+    int getSellPrice() const override {
+      if (level() == 3) return 6;
+      if (level() == 2) return 5;
+      return 3;
+    }
+
+    int getUpgradePrice() const override {
+      if (level() == 2) return 4;
+      return 4;
+    }
 
     // get damage weapon makes on hit
     int getDamage() const override {
-      if (level() == 2) return 10;
+      // 43, 86, 129
       if (level() == 3) return 15;
+      if (level() == 2) return 10;
       return 5;
     }
 
@@ -495,7 +506,16 @@ class CFieldRunners {
     int getBuyPrice() const override { return buyPrice(); }
 
     //! sell price
-    int getSellPrice() const override { return 7; }
+    int getSellPrice() const override {
+      if (level() == 3) return 15;
+      if (level() == 2) return 10;
+      return 5;
+    }
+
+    int getUpgradePrice() const override {
+      if (level() == 2) return 4;
+      return 4;
+    }
 
     // get damage weapon makes on hit
     int getDamage() const override { return 10; }
@@ -519,15 +539,19 @@ class CFieldRunners {
   //! Snowbomb Weapon Cell
   class SnowbombCell : public WeaponCell {
    public:
-    static int buyPrice() { return 10; }
+    static int buyPrice() { return 20; }
 
     SnowbombCell(CFieldRunners *fieldRunners, const CellPos &pos);
 
     //! buy price
-    int getBuyPrice() const override { return buyPrice(); }
-
+    int getBuyPrice() const override { return 20; }
     //! sell price
-    int getSellPrice() const override { return 7; }
+    int getSellPrice() const override { return 10; }
+
+    int getUpgradePrice() const override {
+      if (level() == 2) return 4;
+      return 4;
+    }
 
     // get damage weapon makes on hit
     int getDamage() const override { return 10; }
@@ -552,10 +576,14 @@ class CFieldRunners {
     MissileCell(CFieldRunners *fieldRunners, const CellPos &pos);
 
     //! buy price
-    int getBuyPrice() const override { return buyPrice(); }
-
+    int getBuyPrice() const override { return 20; }
     //! sell price
-    int getSellPrice() const override { return 15; }
+    int getSellPrice() const override { return 10; }
+
+    int getUpgradePrice() const override {
+      if (level() == 2) return 4;
+      return 4;
+    }
 
     // get damage weapon makes on hit
     int getDamage() const override { return 10; }
@@ -586,10 +614,14 @@ class CFieldRunners {
     ShotgunCell(CFieldRunners *fieldRunners, const CellPos &pos);
 
     //! buy price
-    int getBuyPrice() const override { return buyPrice(); }
-
+    int getBuyPrice() const override { return 50; }
     //! sell price
-    int getSellPrice() const override { return 50; }
+    int getSellPrice() const override { return 25; }
+
+    int getUpgradePrice() const override {
+      if (level() == 2) return 4;
+      return 4;
+    }
 
     // get damage weapon makes on hit
     int getDamage() const override { return 15; }
@@ -614,10 +646,14 @@ class CFieldRunners {
     ZapCell(CFieldRunners *fieldRunners, const CellPos &pos);
 
     //! buy price
-    int getBuyPrice() const override { return buyPrice(); }
-
+    int getBuyPrice() const override { return 70; }
     //! sell price
-    int getSellPrice() const override { return 50; }
+    int getSellPrice() const override { return 35; }
+
+    int getUpgradePrice() const override {
+      if (level() == 2) return 4;
+      return 4;
+    }
 
     // get damage weapon makes on hit
     int getDamage() const override { return 20; }
@@ -641,15 +677,19 @@ class CFieldRunners {
   //! Pulse Weapon Cell
   class PulseCell : public WeaponCell {
    public:
-    static int buyPrice() { return 70; }
+    static int buyPrice() { return 40; }
 
     PulseCell(CFieldRunners *fieldRunners, const CellPos &pos);
 
     //! buy price
-    int getBuyPrice() const override { return buyPrice(); }
-
+    int getBuyPrice() const override { return 40; }
     //! sell price
-    int getSellPrice() const override { return 50; }
+    int getSellPrice() const override { return 20; }
+
+    int getUpgradePrice() const override {
+      if (level() == 2) return 4;
+      return 4;
+    }
 
     // get damage weapon makes on hit
     int getDamage() const override { return 15; }
@@ -672,15 +712,19 @@ class CFieldRunners {
   //! Laser Weapon Cell
   class LaserCell : public WeaponCell {
    public:
-    static int buyPrice() { return 70; }
+    static int buyPrice() { return 40; }
 
     LaserCell(CFieldRunners *fieldRunners, const CellPos &pos);
 
     //! buy price
-    int getBuyPrice() const override { return buyPrice(); }
-
+    int getBuyPrice() const override { return 40; }
     //! sell price
-    int getSellPrice() const override { return 50; }
+    int getSellPrice() const override { return 20; }
+
+    int getUpgradePrice() const override {
+      if (level() == 2) return 4;
+      return 4;
+    }
 
     // get damage weapon makes on hit
     int getDamage() const override { return 15; }
@@ -700,15 +744,19 @@ class CFieldRunners {
   //! Firebomb Weapon Cell
   class FirebombCell : public WeaponCell {
    public:
-    static int buyPrice() { return 70; }
+    static int buyPrice() { return 90; }
 
     FirebombCell(CFieldRunners *fieldRunners, const CellPos &pos);
 
     //! buy price
-    int getBuyPrice() const override { return buyPrice(); }
-
+    int getBuyPrice() const override { return 90; }
     //! sell price
-    int getSellPrice() const override { return 50; }
+    int getSellPrice() const override { return 45; }
+
+    int getUpgradePrice() const override {
+      if (level() == 2) return 4;
+      return 4;
+    }
 
     // get damage weapon makes on hit
     int getDamage() const override { return 25; }
@@ -791,15 +839,26 @@ class CFieldRunners {
 
     CFieldRunnersWindow *getWindow() const;
 
+    //---
+
     int getScore() const { return score_; }
+
+    void addScore(int score) { score_ += score; }
+
+    //---
+
     int getLives() const { return lives_; }
 
-    void loseLife(){ lives_ = lives_ - 1; }
+    void loseLife() { lives_ = lives_ - 1; }
+
+    //---
 
     int getMoney() const { return money_; }
 
     void addMoney(int money) { money_ += money; }
     void subMoney(int money) { money_ -= money; }
+
+    //---
 
     //! draw player details
     virtual void draw();
@@ -807,9 +866,9 @@ class CFieldRunners {
    private:
     CFieldRunners *fieldRunners_;
 
-    int score_;
-    int lives_;
-    int money_;
+    int score_ { 0 };
+    int lives_ { 0 };
+    int money_ { 0 };
   };
 
   //---
@@ -914,12 +973,16 @@ class CFieldRunners {
     void setGoal(const CellPos &goal) { goal_ = goal; }
 
     bool isAtGoal() const { return atGoal_; }
+    void setAtGoal(bool b) { atGoal_ = b; }
 
     bool isDamaged() const { return damaged_; }
+    void setDamaged(bool b) { damaged_ = b; }
 
     bool isDying() const { return dying_; }
+    void setDying(bool b) { dying_ = b; }
 
     bool isDead() const { return dead_; }
+    void setDead(bool b) { dead_ = b; }
 
     bool isDone() const { return isAtGoal() || isDead(); }
 
@@ -941,6 +1004,8 @@ class CFieldRunners {
 
     // money at death
     virtual int getDeathMoney() const = 0;
+    // score at death
+    virtual int getDeathScore() const = 0;
 
     virtual int getNumFrames() const = 0;
 
@@ -990,6 +1055,7 @@ class CFieldRunners {
     int getMaxHealth() const override { return 100; }
 
     int getDeathMoney() const override { return 1; }
+    int getDeathScore() const override { return 100; }
 
     double getSpeed() const override { return 0.1; }
 
@@ -1019,6 +1085,7 @@ class CFieldRunners {
     int getMaxHealth() const override { return 150; }
 
     int getDeathMoney() const override { return 1; }
+    int getDeathScore() const override { return 100; }
 
     double getSpeed() const override { return 0.1; }
 
@@ -1033,6 +1100,25 @@ class CFieldRunners {
 
   //---
 
+  //! Motorbike Runner
+  class Motorbike : public Runner {
+   public:
+    Motorbike(CFieldRunners *fieldRunners);
+
+    int getMaxHealth() const override { return 200; }
+
+    int getDeathMoney() const override { return 2; }
+    int getDeathScore() const override { return 100; }
+
+    double getSpeed() const override { return 0.2; }
+
+    int getNumFrames() const override { return 1; }
+
+    ImageId getFrameImage(int frame) override;
+  };
+
+  //---
+
   //! Car Runner
   class Car : public Runner {
    public:
@@ -1041,6 +1127,7 @@ class CFieldRunners {
     int getMaxHealth() const override { return 200; }
 
     int getDeathMoney() const override { return 2; }
+    int getDeathScore() const override { return 100; }
 
     double getSpeed() const override { return 0.2; }
 
@@ -1055,6 +1142,25 @@ class CFieldRunners {
 
   //---
 
+  //! Heavybike Runner
+  class Heavybike : public Runner {
+   public:
+    Heavybike(CFieldRunners *fieldRunners);
+
+    int getMaxHealth() const override { return 200; }
+
+    int getDeathMoney() const override { return 2; }
+    int getDeathScore() const override { return 100; }
+
+    double getSpeed() const override { return 0.2; }
+
+    int getNumFrames() const override { return 1; }
+
+    ImageId getFrameImage(int frame) override;
+  };
+
+  //---
+
   //! Tank Runner
   class Tank : public Runner {
    public:
@@ -1063,6 +1169,7 @@ class CFieldRunners {
     int getMaxHealth() const override { return 500; }
 
     int getDeathMoney() const override { return 5; }
+    int getDeathScore() const override { return 100; }
 
     double getSpeed() const override { return 0.2; }
 
@@ -1085,8 +1192,9 @@ class CFieldRunners {
     int getMaxHealth() const override { return 300; }
 
     int getDeathMoney() const override { return 3; }
+    int getDeathScore() const override { return 100; }
 
-    double getSpeed() const override { return 0.5; }
+    double getSpeed() const override { return 0.3; }
 
     int getNumFrames() const override { return 1; }
 
@@ -1109,8 +1217,9 @@ class CFieldRunners {
     int getMaxHealth() const override { return 300; }
 
     int getDeathMoney() const override { return 3; }
+    int getDeathScore() const override { return 100; }
 
-    double getSpeed() const override { return 0.5; }
+    double getSpeed() const override { return 0.4; }
 
     int getNumFrames() const override { return 1; }
 
@@ -1133,6 +1242,7 @@ class CFieldRunners {
     int getMaxHealth() const override { return 300; }
 
     int getDeathMoney() const override { return 3; }
+    int getDeathScore() const override { return 100; }
 
     double getSpeed() const override { return 0.5; }
 
@@ -1149,6 +1259,27 @@ class CFieldRunners {
     using CellSet = std::set<FieldCell *>;
 
     mutable CellSet visited_;
+  };
+
+  //---
+
+  //! Blimp Runner
+  class Blimp : public Runner {
+   public:
+    Blimp(CFieldRunners *fieldRunners);
+
+    int getMaxHealth() const override { return 300; }
+
+    int getDeathMoney() const override { return 3; }
+    int getDeathScore() const override { return 100; }
+
+    double getSpeed() const override { return 0.5; }
+
+    int getNumFrames() const override { return 1; }
+
+    ImageId getFrameImage(int frame) override;
+
+    FieldCell *searchNext() const override;
   };
 
   //-----
@@ -1170,6 +1301,7 @@ class CFieldRunners {
     const Point &getPoint() const { return point_; }
 
     bool isAtGoal() const { return atGoal_; }
+    void setAtGoal(bool b) { atGoal_ = b; }
 
     virtual bool isDone() const { return isAtGoal(); }
 
@@ -1317,10 +1449,12 @@ class CFieldRunners {
 
   WeaponCell *createWeaponCell(CellType cellType, const CellPos &pos);
 
+  // builing blocks
   virtual EmptyCell  *createEmptyCell (const CellPos &pos);
   virtual BorderCell *createBorderCell(const CellPos &pos);
   virtual BlockCell  *createBlockCell (const CellPos &pos);
 
+  // weapons
   virtual GunCell      *createGunCell     (const CellPos &pos);
   virtual GlueCell     *createGlueCell    (const CellPos &pos);
   virtual SnowbombCell *createSnowbombCell(const CellPos &pos);
@@ -1331,26 +1465,36 @@ class CFieldRunners {
   virtual LaserCell    *createLaserCell   (const CellPos &pos);
   virtual FirebombCell *createFirebombCell(const CellPos &pos);
 
+  // entrance/exit
   virtual Entrance *createEntrance(const CellPos &pos);
   virtual Exit     *createExit    (const CellPos &pos);
 
-  virtual Soldier *createSoldier();
-
-  virtual Mercenary *createMercenary();
-
-  virtual Car *createCar();
-
-  virtual Tank *createTank();
-
+  // runners
+  virtual Soldier    *createSoldier();
+  virtual Mercenary  *createMercenary();
+  virtual Motorbike  *createMotorbike();
+  virtual Car        *createCar();
+  virtual Heavybike  *createHeavybike();
+  virtual Tank       *createTank();
   virtual Helicopter *createHelicopter();
+  virtual Plane      *createPlane();
+  virtual Train      *createTrain();
+  virtual Blimp      *createBlimp();
 
-  virtual Plane *createPlane();
-
-  virtual Train *createTrain();
-
-  virtual Rocket *createRocket(const Point &point, Runner *runner, Orient orient);
-
+  // bullets
+  virtual Rocket      *createRocket(const Point &point, Runner *runner, Orient orient);
   virtual PulseBullet *createPulseBullet(const Point &point, Orient orient);
+
+  //---
+
+  uint maxLevels() const { return maxLevels_; }
+  void setMaxLevels(uint i) { maxLevels_ = i; }
+
+  uint startMoney() const { return startMoney_; }
+  void setStartMoney(uint i) { startMoney_ = i; }
+
+  uint startLives() const { return startLives_; }
+  void setStartLives(uint i) { startLives_ = i; }
 
   //---
 
@@ -1408,10 +1552,12 @@ class CFieldRunners {
   void sellCell(FieldCell *cell);
 
   // upgrade cell
-  void upgradeCell(FieldCell *cell);
+  bool upgradeCell(FieldCell *cell);
 
   // select cell
   void selectCell(FieldCell *cell);
+
+  void deselectAll();
 
   // add block cell
   void addBlockCell(const CellPos &pos);
@@ -1430,8 +1576,14 @@ class CFieldRunners {
   // send out a mercenary
   void emitMercenary(const std::string &entranceId="");
 
+  // send out a motorbike
+  void emitMotorbike(const std::string &entranceId="");
+
   // send out a car
   void emitCar(const std::string &entranceId="");
+
+  // send out a heavy bike
+  void emitHeavybike(const std::string &entranceId="");
 
   // send out a tank
   void emitTank(const std::string &entranceId="");
@@ -1444,6 +1596,9 @@ class CFieldRunners {
 
   // send out a train
   void emitTrain(const std::string &entranceId="");
+
+  // send out a blimp
+  void emitBlimp(const std::string &entranceId="");
 
   //---
 
@@ -1459,6 +1614,7 @@ class CFieldRunners {
   CellPos getEndPos  (const std::string &id) const;
 
   void playerAddMoney(int money);
+  void playerAddScore(int score);
 
   void playerLoseLife();
 
@@ -1485,6 +1641,8 @@ class CFieldRunners {
 
   //! update game
   virtual void update();
+
+  void emitRunner(RunnerType type, std::string entranceId="");
 
   //! draw game
   virtual void draw();
@@ -1557,6 +1715,9 @@ class CFieldRunners {
   bool         paused_      { false };            //!< is paused
   bool         fastForward_ { false };            //!< is fast forward
   uint         tick_        { 0 };                //!< Update Count
+  uint         maxLevels_   { 100 };              //!< Max Levels
+  uint         startMoney_  { 20 };               //!< Start Money
+  uint         startLives_  { 20 };               //!< State Lives
   uint         level_       { 1 };                //!< Current Level
   uint         levelTicks_  { 100 };              //!< Current Level ticks
   Weapons      weapons_;                          //!< Weapons
