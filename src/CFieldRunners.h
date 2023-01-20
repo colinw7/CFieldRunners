@@ -265,6 +265,10 @@ class CFieldRunners {
 
     CFieldRunners *fieldRunners() const { return fieldRunners_; }
 
+    CFieldRunnersWindow *getWindow() const;
+
+    virtual bool isRunner() const { return false; }
+
     // get/set current position
     void setPos(const CellPos &pos) { pos_ = pos; }
     const CellPos &getPos() const { return pos_; }
@@ -314,8 +318,6 @@ class CFieldRunners {
     // get/set transparent
     bool isTransparent() const { return cellData_.transparent; }
     void setTransparent(bool b) { cellData_.transparent = b; }
-
-    CFieldRunnersWindow *getWindow() const;
 
     //! is block solid (runners can't walk through)
     virtual bool isSolid() const = 0;
@@ -425,10 +427,10 @@ class CFieldRunners {
     virtual int getUpgradePrice() const = 0;
 
     // get damage weapon makes on hit
-    virtual int getDamage() const = 0;
+    virtual uint getDamage() const = 0;
 
     //! range (how close to detect/shoot)
-    virtual int getRange() const = 0;
+    virtual uint getRange() const = 0;
 
     //--
 
@@ -437,14 +439,22 @@ class CFieldRunners {
 
     //---
 
-    Orient deltaToOrient(int dx, int dy) const;
+    int reload() const { return reload_; }
+    void setReload(int i) { reload_ = i; }
+
+    //---
+
+    Orient deltaToOrient4(int dx, int dy) const;
+    Orient deltaToOrient8(int dx, int dy) const;
 
     void setNewOrient(Orient newOrient);
 
    private:
     Orient orient_ { ORIENT_NONE };
-    int    damage_ { 0 };
+    uint   damage_ { 0 };
     int    level_  { 1 };
+    int    reload_ { 0 };
+
   };
 
   //---
@@ -472,7 +482,7 @@ class CFieldRunners {
     }
 
     // get damage weapon makes on hit
-    int getDamage() const override {
+    uint getDamage() const override {
       // 43, 86, 129
       if (level() == 3) return 15;
       if (level() == 2) return 10;
@@ -480,7 +490,7 @@ class CFieldRunners {
     }
 
     //! range (how close to detect/shoot)
-    int getRange() const override { return 2; }
+    uint getRange() const override { return 2; }
 
     // update gun
     void update() override;
@@ -518,10 +528,10 @@ class CFieldRunners {
     }
 
     // get damage weapon makes on hit
-    int getDamage() const override { return 10; }
+    uint getDamage() const override { return 10; }
 
     //! range (how close to detect/shoot)
-    int getRange() const override { return 3; }
+    uint getRange() const override { return 3; }
 
     // update glue
     void update() override;
@@ -554,10 +564,10 @@ class CFieldRunners {
     }
 
     // get damage weapon makes on hit
-    int getDamage() const override { return 10; }
+    uint getDamage() const override { return 10; }
 
     //! range (how close to detect/shoot)
-    int getRange() const override { return 3; }
+    uint getRange() const override { return 3; }
 
     // update snowbomb
     void update() override;
@@ -586,10 +596,10 @@ class CFieldRunners {
     }
 
     // get damage weapon makes on hit
-    int getDamage() const override { return 10; }
+    uint getDamage() const override { return 10; }
 
     //! range (how close to detect/shoot)
-    int getRange() const override { return 3; }
+    uint getRange() const override { return 3; }
 
     // update missile
     void update() override;
@@ -598,8 +608,6 @@ class CFieldRunners {
     void draw() override;
 
    private:
-    int reload_ { 0 };
-
     static ImageId images_[8];    //! images for gun (rotate 0-315 by 45)
     static bool    imagesLoaded_; //! are images loaded ?
   };
@@ -624,10 +632,10 @@ class CFieldRunners {
     }
 
     // get damage weapon makes on hit
-    int getDamage() const override { return 15; }
+    uint getDamage() const override { return 15; }
 
     //! range (how close to detect/shoot)
-    int getRange() const override { return 3; }
+    uint getRange() const override { return 3; }
 
     // update shotgun
     void update() override;
@@ -656,10 +664,10 @@ class CFieldRunners {
     }
 
     // get damage weapon makes on hit
-    int getDamage() const override { return 20; }
+    uint getDamage() const override { return 20; }
 
     //! range (how close to detect/shoot)
-    int getRange() const override { return 3; }
+    uint getRange() const override { return 3; }
 
     // update zap
     void update() override;
@@ -692,19 +700,16 @@ class CFieldRunners {
     }
 
     // get damage weapon makes on hit
-    int getDamage() const override { return 15; }
+    uint getDamage() const override { return 15; }
 
     //! range (how close to detect/shoot)
-    int getRange() const override { return 3; }
+    uint getRange() const override { return 3; }
 
     // update pulse
     void update() override;
 
     // draw pulse
     void draw() override;
-
-   private:
-    int reload_ { 0 };
   };
 
   //---
@@ -727,10 +732,10 @@ class CFieldRunners {
     }
 
     // get damage weapon makes on hit
-    int getDamage() const override { return 15; }
+    uint getDamage() const override { return 15; }
 
     //! range (how close to detect/shoot)
-    int getRange() const override { return 3; }
+    uint getRange() const override { return 3; }
 
     // update laser
     void update() override;
@@ -759,12 +764,12 @@ class CFieldRunners {
     }
 
     // get damage weapon makes on hit
-    int getDamage() const override { return 25; }
+    uint getDamage() const override { return 25; }
 
     //! range (how close to detect/shoot)
-    int getRange() const override { return 3; }
+    uint getRange() const override { return 3; }
 
-    // update gun
+    // update firebomb
     void update() override;
 
     // draw firebomb
@@ -836,6 +841,8 @@ class CFieldRunners {
     Player(CFieldRunners *fieldRunners);
 
     virtual ~Player() { }
+
+    void init();
 
     CFieldRunnersWindow *getWindow() const;
 
@@ -927,13 +934,13 @@ class CFieldRunners {
   //---
 
   //! Entrance to emit runners from
-  class Entrance : public FieldCell {
+  class EntranceCell : public FieldCell {
    public:
-    Entrance(CFieldRunners *fieldRunners, const CellPos &pos) :
+    EntranceCell(CFieldRunners *fieldRunners, const CellPos &pos) :
      FieldCell(fieldRunners, pos) {
     }
 
-    virtual ~Entrance() { }
+    virtual ~EntranceCell() { }
 
     // not solid
     bool isSolid() const override { return false; }
@@ -942,13 +949,13 @@ class CFieldRunners {
   //---
 
   //! Exit runners want to get to
-  class Exit : public FieldCell {
+  class ExitCell : public FieldCell {
    public:
-    Exit(CFieldRunners *fieldRunners, const CellPos &pos) :
+    ExitCell(CFieldRunners *fieldRunners, const CellPos &pos) :
      FieldCell(fieldRunners, pos) {
     }
 
-    virtual ~Exit() { }
+    virtual ~ExitCell() { }
 
     // not solid
     bool isSolid() const override { return false; }
@@ -960,13 +967,13 @@ class CFieldRunners {
   //! (Virtual - derive from this for different types of runners)
   // TODO: need to model speed, health
   // TODO: handle dying/dead/alive
-  class Runner : public Cell {
+  class RunnerCell : public Cell {
    public:
-    Runner(CFieldRunners *fieldRunners);
+    RunnerCell(CFieldRunners *fieldRunners);
 
-    virtual ~Runner() { }
+    virtual ~RunnerCell() { }
 
-    CFieldRunnersWindow *getWindow() const;
+    bool isRunner() const override { return true; }
 
     // set/get goal position
     const CellPos &getGoal() const { return goal_; }
@@ -994,7 +1001,8 @@ class CFieldRunners {
     void setHealth(int health) { health_ = health; }
 
     // damage runner
-    void damage(int damage);
+    void bulletDamage(uint id, uint damage);
+    void damage(uint damage);
 
     // slow down runner
     void slowDown(int count);
@@ -1032,23 +1040,28 @@ class CFieldRunners {
     void getXYPos(int &x, int &y) const;
 
    protected:
-    CellPos goal_;              //! goal position
-    bool    atGoal_  { false }; //! made it to the goal position
-    int     health_  { 0 };     //! current health
-    bool    damaged_ { false }; //! was damaged
-    bool    dying_   { false }; //! is dying
-    bool    dead_    { false }; //! is dead
-    int     slow_    { 0 };     //! slow down count
-    int     dx_      { 0 };     //! x distance travelled across current cell (pixels)
-    int     dy_      { 0 };     //! y distance travelled across current cell (pixels)
-    double  dist_    { 0.0 };   //! total distance travelled
-    double  speed_   { 0.0 };   //! speed
+    using BulletSet = std::set<uint>;
+
+    CellPos   goal_;              //!< goal position
+    bool      atGoal_  { false }; //!< made it to the goal position
+    int       health_  { 0 };     //!< current health
+    bool      damaged_ { false }; //!< was damaged
+    bool      dying_   { false }; //!< is dying
+    bool      dead_    { false }; //!< is dead
+    int       slow_    { 0 };     //!< slow down count
+    int       dx_      { 0 };     //!< x distance travelled across current cell (pixels)
+    int       dy_      { 0 };     //!< y distance travelled across current cell (pixels)
+    double    dist_    { 0.0 };   //!< total distance travelled
+    double    speed_   { 0.0 };   //!< speed
+    BulletSet bullets_;           //!< hit bullets
   };
+
+  using RunnerArray = std::vector<RunnerCell *>;
 
   //---
 
   //! Soldier Runner
-  class Soldier : public Runner {
+  class Soldier : public RunnerCell {
    public:
     Soldier(CFieldRunners *fieldRunners);
 
@@ -1078,7 +1091,7 @@ class CFieldRunners {
   //---
 
   //! Mercenary Runner
-  class Mercenary : public Runner {
+  class Mercenary : public RunnerCell {
    public:
     Mercenary(CFieldRunners *fieldRunners);
 
@@ -1101,7 +1114,7 @@ class CFieldRunners {
   //---
 
   //! Motorbike Runner
-  class Motorbike : public Runner {
+  class Motorbike : public RunnerCell {
    public:
     Motorbike(CFieldRunners *fieldRunners);
 
@@ -1120,7 +1133,7 @@ class CFieldRunners {
   //---
 
   //! Car Runner
-  class Car : public Runner {
+  class Car : public RunnerCell {
    public:
     Car(CFieldRunners *fieldRunners);
 
@@ -1143,7 +1156,7 @@ class CFieldRunners {
   //---
 
   //! Heavybike Runner
-  class Heavybike : public Runner {
+  class Heavybike : public RunnerCell {
    public:
     Heavybike(CFieldRunners *fieldRunners);
 
@@ -1162,7 +1175,7 @@ class CFieldRunners {
   //---
 
   //! Tank Runner
-  class Tank : public Runner {
+  class Tank : public RunnerCell {
    public:
     Tank(CFieldRunners *fieldRunners);
 
@@ -1185,7 +1198,7 @@ class CFieldRunners {
   //---
 
   //! Helicopter Runner
-  class Helicopter : public Runner {
+  class Helicopter : public RunnerCell {
    public:
     Helicopter(CFieldRunners *fieldRunners);
 
@@ -1210,7 +1223,7 @@ class CFieldRunners {
   //---
 
   //! Plane Runner
-  class Plane : public Runner {
+  class Plane : public RunnerCell {
    public:
     Plane(CFieldRunners *fieldRunners);
 
@@ -1235,7 +1248,7 @@ class CFieldRunners {
   //---
 
   //! Train Runner
-  class Train : public Runner {
+  class Train : public RunnerCell {
    public:
     Train(CFieldRunners *fieldRunners);
 
@@ -1264,7 +1277,7 @@ class CFieldRunners {
   //---
 
   //! Blimp Runner
-  class Blimp : public Runner {
+  class Blimp : public RunnerCell {
    public:
     Blimp(CFieldRunners *fieldRunners);
 
@@ -1296,14 +1309,13 @@ class CFieldRunners {
 
     CFieldRunnersWindow *getWindow() const;
 
+    uint id() const { return id_; }
+
     // get/set current point
     void setPoint(const Point &point) { point_ = point; }
     const Point &getPoint() const { return point_; }
 
-    bool isAtGoal() const { return atGoal_; }
-    void setAtGoal(bool b) { atGoal_ = b; }
-
-    virtual bool isDone() const { return isAtGoal(); }
+    virtual bool isDone() const { return done_; }
 
     //! update bullet (move to next cell)
     virtual void update() = 0;
@@ -1314,24 +1326,29 @@ class CFieldRunners {
    protected:
     CFieldRunners *fieldRunners_;
 
+    uint  id_   { 0 };
     Point point_;  //! current point
-    bool  atGoal_; //! made it to the goal point
+    bool  done_ { false };
   };
 
   //---
 
-  class Rocket : public Bullet {
+  class MissileBullet : public Bullet {
    public:
-    Rocket(CFieldRunners *fieldRunners, const Point &point, Runner *runner, Orient orient);
+    MissileBullet(CFieldRunners *fieldRunners, const Point &point, RunnerCell *runner,
+                  Orient orient);
 
-    virtual ~Rocket() { }
+    virtual ~MissileBullet() { }
 
     Orient orient() const { return orient_; }
     void setOrient(Orient orient) { orient_ = orient; }
 
     bool isDone() const override;
 
-    int getDamage() const { return 20; }
+    uint getDamage() const { return 20; }
+
+    bool isAtGoal() const { return atGoal_; }
+    void setAtGoal(bool b) { atGoal_ = b; }
 
     //! update rocket (move to next cell)
     void update() override;
@@ -1343,11 +1360,12 @@ class CFieldRunners {
     void setNewOrient(Orient newOrient);
 
    private:
-    Runner *runner_ { nullptr };
-    Orient  orient_ { ORIENT_NONE };
-
     static ImageId images_[8];    //! rocket images
     static bool    imagesLoaded_; //! are images loaded ?
+
+    RunnerCell *runner_ { nullptr };
+    Orient      orient_ { ORIENT_NONE };
+    bool        atGoal_ { false }; //! made it to the goal point
   };
 
   //-----
@@ -1360,7 +1378,7 @@ class CFieldRunners {
 
     Orient orient() const { return orient_; }
 
-    int getDamage() const { return 20; }
+    uint getDamage() const { return 20; }
 
     //! update pulse (move to next cell)
     void update() override;
@@ -1370,6 +1388,35 @@ class CFieldRunners {
 
    private:
     Orient orient_ { ORIENT_NONE };
+  };
+
+  //-----
+
+  class LaserBullet : public Bullet {
+   public:
+    LaserBullet(CFieldRunners *fieldRunners, const Point &point, Orient orient);
+
+    virtual ~LaserBullet() { }
+
+    Orient orient() const { return orient_; }
+
+    int initLife() const { return 10; }
+
+    int life() const { return life_; }
+
+    uint getDamage() const { return 20; }
+
+    bool isDone() const override { return (life_ == 0); }
+
+    //! update pulse (move to next cell)
+    void update() override;
+
+    //! draw pulse
+    void draw() override;
+
+   private:
+    Orient orient_ { ORIENT_NONE };
+    int    life_   { 0 };
   };
 
   //-----
@@ -1401,9 +1448,9 @@ class CFieldRunners {
 
   //-----
 
-  using EntranceList = std::vector<Entrance *>;
-  using ExitList     = std::vector<Exit *>;
-  using RunnerList   = std::vector<Runner *>;
+  using EntranceList = std::vector<EntranceCell *>;
+  using ExitList     = std::vector<ExitCell *>;
+  using RunnerList   = std::vector<RunnerCell *>;
   using BulletList   = std::vector<Bullet *>;
 
   //-----
@@ -1466,8 +1513,8 @@ class CFieldRunners {
   virtual FirebombCell *createFirebombCell(const CellPos &pos);
 
   // entrance/exit
-  virtual Entrance *createEntrance(const CellPos &pos);
-  virtual Exit     *createExit    (const CellPos &pos);
+  virtual EntranceCell *createEntrance(const CellPos &pos);
+  virtual ExitCell     *createExit    (const CellPos &pos);
 
   // runners
   virtual Soldier    *createSoldier();
@@ -1482,8 +1529,9 @@ class CFieldRunners {
   virtual Blimp      *createBlimp();
 
   // bullets
-  virtual Rocket      *createRocket(const Point &point, Runner *runner, Orient orient);
-  virtual PulseBullet *createPulseBullet(const Point &point, Orient orient);
+  virtual MissileBullet *createMissileBullet(const Point &point, RunnerCell *runner, Orient orient);
+  virtual PulseBullet   *createPulseBullet(const Point &point, Orient orient);
+  virtual LaserBullet   *createLaserBullet(const Point &point, Orient orient);
 
   //---
 
@@ -1538,7 +1586,9 @@ class CFieldRunners {
 
   uint getNumRunners() const;
 
-  Runner *getRunner(uint i) const;
+  RunnerCell *getRunner(uint i) const;
+
+  void getCellRunners(const CellPos &pos, RunnerArray &runners) const;
 
   // get/set buy cell type
   CellType getBuyCellType() const { return buyCellType_; }
@@ -1602,11 +1652,14 @@ class CFieldRunners {
 
   //---
 
-  // send out a rocket
-  void emitRocket(const Point &point, Runner *runner, Orient orient);
+  // send out a missile bullet (rocket)
+  void emitMissileBullet(const Point &point, RunnerCell *runner, Orient orient);
 
-  // send out a rocket
+  // send out a pulse bullet
   void emitPulseBullet(const Point &point, Orient orient);
+
+  // send out a laser bullet
+  void emitLaserBullet(const Point &point, Orient orient);
 
   //---
 
@@ -1618,16 +1671,16 @@ class CFieldRunners {
 
   void playerLoseLife();
 
-  Runner *nearestRunner(const CellPos &loc, int &dist) const;
-  Runner *nearestRunner(const CellPos &loc, int &dist, int &dx, int &dy) const;
+  RunnerCell *nearestRunner(const CellPos &loc, uint &dist) const;
+  RunnerCell *nearestRunner(const CellPos &loc, uint &dist, int &dx, int &dy) const;
 
   void initBuild();
 
   //! build game using (rows x cols) grid
   void build(uint rows, uint cols);
 
-  Entrance *addEntrance(int r, int c);
-  Exit     *addExit    (int r, int c);
+  EntranceCell *addEntrance(int r, int c);
+  ExitCell     *addExit    (int r, int c);
 
   bool loadMap(const std::string &filename);
 
@@ -1638,6 +1691,10 @@ class CFieldRunners {
   //! get/set fast forrward
   bool isFastForward() const { return fastForward_; }
   void setFastForward(bool b) { fastForward_ = b; }
+
+  //! get/set settings displayed
+  bool isSettings() const { return settings_; }
+  void setSettings(bool b) { settings_ = b; }
 
   //! update game
   virtual void update();
@@ -1714,6 +1771,7 @@ class CFieldRunners {
   BorderType   borderType_  { BorderType::NONE }; //!< Border type
   bool         paused_      { false };            //!< is paused
   bool         fastForward_ { false };            //!< is fast forward
+  bool         settings_    { false };            //!< is settings
   uint         tick_        { 0 };                //!< Update Count
   uint         maxLevels_   { 100 };              //!< Max Levels
   uint         startMoney_  { 20 };               //!< Start Money

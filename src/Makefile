@@ -569,7 +569,10 @@ compiler_clean: compiler_moc_predefs_clean compiler_moc_header_clean
 		svg/shotgun_weapon_svg.h \
 		svg/zap_weapon_svg.h \
 		svg/pulse_weapon_svg.h \
-		svg/laser_weapon_svg.h \
+		svg/laser_weapon_n_svg.h \
+		svg/laser_weapon_s_svg.h \
+		svg/laser_weapon_e_svg.h \
+		svg/laser_weapon_w_svg.h \
 		svg/firebomb_weapon_svg.h \
 		svg/missile_bullet_e_svg.h \
 		svg/missile_bullet_ne_svg.h \

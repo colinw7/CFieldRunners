@@ -1,5 +1,22 @@
 #!/bin/csh -f
 
+set args  = ()
+set clean = 0
+
+while ($#argv > 0)
+  if ("$1" == "-clean") then
+    set clean = 1
+    shift
+  else
+    set args = ($args $1:q)
+    shift
+  endif
+end
+
+if ($clean == 1) then
+  rm *_svg.h
+endif
+
 foreach file (*.svg)
   CBinArr -qsvg $file > $file:r_svg.h.1
 

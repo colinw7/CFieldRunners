@@ -175,22 +175,22 @@ createFirebombCell(const CellPos &pos)
 
 //---
 
-CFieldRunners::Entrance *
+CFieldRunners::EntranceCell *
 CFieldRunners::
 createEntrance(const CellPos &pos)
 {
   std::cerr << "createEntrance\n";
 
-  return new Entrance(this, pos);
+  return new EntranceCell(this, pos);
 }
 
-CFieldRunners::Exit *
+CFieldRunners::ExitCell *
 CFieldRunners::
 createExit(const CellPos &pos)
 {
   std::cerr << "createExit\n";
 
-  return new Exit(this, pos);
+  return new ExitCell(this, pos);
 }
 
 //---
@@ -287,13 +287,13 @@ createBlimp()
 
 //---
 
-CFieldRunners::Rocket *
+CFieldRunners::MissileBullet *
 CFieldRunners::
-createRocket(const Point &point, Runner *runner, Orient orient)
+createMissileBullet(const Point &point, RunnerCell *runner, Orient orient)
 {
-  std::cerr << "createRocket\n";
+  std::cerr << "createMissileBullet\n";
 
-  return new Rocket(this, point, runner, orient);
+  return new MissileBullet(this, point, runner, orient);
 }
 
 CFieldRunners::PulseBullet *
@@ -303,6 +303,15 @@ createPulseBullet(const Point &point, Orient orient)
   std::cerr << "createPulseBullet\n";
 
   return new PulseBullet(this, point, orient);
+}
+
+CFieldRunners::LaserBullet *
+CFieldRunners::
+createLaserBullet(const Point &point, Orient orient)
+{
+  std::cerr << "createLaserBullet\n";
+
+  return new LaserBullet(this, point, orient);
 }
 
 //---
@@ -378,11 +387,20 @@ getNumRunners() const
   return uint(runners_.size());
 }
 
-CFieldRunners::Runner *
+CFieldRunners::RunnerCell *
 CFieldRunners::
 getRunner(uint i) const
 {
   return runners_[i];
+}
+
+void
+CFieldRunners::
+getCellRunners(const CellPos &pos, RunnerArray &runners) const
+{
+  for (auto *runner : runners_)
+    if (runner->getPos() == pos)
+      runners.push_back(runner);
 }
 
 void
@@ -398,7 +416,7 @@ buyCell(const CellPos &pos)
 {
   auto price = cellPrice(buyCellType_);
 
-  if (player_->getMoney() <= price)
+  if (player_->getMoney() < price)
     return nullptr;
 
   int num_rows = getNumRows();
@@ -475,7 +493,7 @@ upgradeCell(FieldCell *cell)
 
   auto price = weapon->getUpgradePrice();
 
-  if (player_->getMoney() <= price)
+  if (player_->getMoney() < price)
     return false;
 
   if (weapon->level() >= 3)
@@ -568,7 +586,7 @@ initBuild()
   annotations_.clear();
 }
 
-CFieldRunners::Entrance *
+CFieldRunners::EntranceCell *
 CFieldRunners::
 addEntrance(int r, int c)
 {
@@ -584,7 +602,7 @@ addEntrance(int r, int c)
   return entrance;
 }
 
-CFieldRunners::Exit *
+CFieldRunners::ExitCell *
 CFieldRunners::
 addExit(int r, int c)
 {
@@ -1126,6 +1144,10 @@ loadMap(const std::string &filename)
   // cleanup
   delete [] grid;
 
+  //---
+
+  player_->init();
+
   return true;
 }
 
@@ -1363,9 +1385,9 @@ emitBlimp(const std::string &entranceId)
 
 void
 CFieldRunners::
-emitRocket(const Point &point, Runner *runner, Orient orient)
+emitMissileBullet(const Point &point, RunnerCell *runner, Orient orient)
 {
-  auto *bullet = createRocket(point, runner, orient);
+  auto *bullet = createMissileBullet(point, runner, orient);
 
   bullets_.push_back(bullet);
 }
@@ -1375,6 +1397,15 @@ CFieldRunners::
 emitPulseBullet(const Point &point, Orient orient)
 {
   auto *bullet = createPulseBullet(point, orient);
+
+  bullets_.push_back(bullet);
+}
+
+void
+CFieldRunners::
+emitLaserBullet(const Point &point, Orient orient)
+{
+  auto *bullet = createLaserBullet(point, orient);
 
   bullets_.push_back(bullet);
 }
@@ -1447,9 +1478,9 @@ playerLoseLife()
   player_->loseLife();
 }
 
-CFieldRunners::Runner *
+CFieldRunners::RunnerCell *
 CFieldRunners::
-nearestRunner(const CellPos &loc, int &dist) const
+nearestRunner(const CellPos &loc, uint &dist) const
 {
   int dx, dy;
   auto *runner = nearestRunner(loc, dist, dx, dy);
@@ -1457,15 +1488,15 @@ nearestRunner(const CellPos &loc, int &dist) const
   return runner;
 }
 
-CFieldRunners::Runner *
+CFieldRunners::RunnerCell *
 CFieldRunners::
-nearestRunner(const CellPos &loc, int &dist, int &dx, int &dy) const
+nearestRunner(const CellPos &loc, uint &dist, int &dx, int &dy) const
 {
   dist = 0;
 
-  Runner  *minRunner = nullptr;
-  CellPos  minPos;
-  int      minDist = INT_MAX;
+  RunnerCell *minRunner = nullptr;
+  CellPos     minPos;
+  uint        minDist = 0;
 
   // find nearest enemy and if close enough rotate 1 turn to face
   uint numRunners = this->getNumRunners();
@@ -1476,12 +1507,12 @@ nearestRunner(const CellPos &loc, int &dist, int &dx, int &dy) const
 
     const auto &pos = runner->getPos();
 
-    int dx1 = std::abs(pos.col - loc.col);
-    int dy1 = std::abs(pos.row - loc.row);
+    uint dx1 = std::abs(pos.col - loc.col);
+    uint dy1 = std::abs(pos.row - loc.row);
 
-    int dist1 = dx1 + dy1;
+    uint dist1 = dx1 + dy1;
 
-    if (dist1 < minDist) {
+    if (! minRunner || dist1 < minDist) {
       minRunner = runner;
       minPos    = pos;
       minDist   = dist1;
@@ -1500,7 +1531,7 @@ void
 CFieldRunners::
 update()
 {
-  if (isPaused())
+  if (isPaused() || isSettings())
     return;
 
   int nt = (isFastForward() ? 2 : 1);
@@ -1516,7 +1547,7 @@ update()
     // remove done runners
     runners_.erase(
       std::remove_if(runners_.begin(), runners_.end(),
-                     std::mem_fun(&Runner::isDone)), runners_.end());
+                     std::mem_fun(&RunnerCell::isDone)), runners_.end());
 
     if (tick_ > levelTicks_ && runners_.empty()) {
       if (level_ < maxLevels()) {
@@ -1897,6 +1928,13 @@ CFieldRunners::Player::
 Player(CFieldRunners *fieldRunners) :
  fieldRunners_(fieldRunners)
 {
+  init();
+}
+
+void
+CFieldRunners::Player::
+init()
+{
   money_ = fieldRunners_->startMoney();
   lives_ = fieldRunners_->startLives();
 }
@@ -2185,22 +2223,28 @@ draw()
 
 //-----------
 
-CFieldRunners::Runner::
-Runner(CFieldRunners *fieldRunners) :
+CFieldRunners::RunnerCell::
+RunnerCell(CFieldRunners *fieldRunners) :
  Cell(fieldRunners, CellPos())
 {
 }
 
-CFieldRunnersWindow *
-CFieldRunners::Runner::
-getWindow() const
+void
+CFieldRunners::RunnerCell::
+bulletDamage(uint bulletId, uint damage)
 {
-  return fieldRunners()->getWindow();
+  auto p = bullets_.find(bulletId);
+
+  if (p == bullets_.end()) {
+    this->damage(damage);
+
+    bullets_.insert(bulletId);
+  }
 }
 
 void
-CFieldRunners::Runner::
-damage(int damage)
+CFieldRunners::RunnerCell::
+damage(uint damage)
 {
   if (isDying() || isDead())
     return;
@@ -2220,7 +2264,7 @@ damage(int damage)
 }
 
 void
-CFieldRunners::Runner::
+CFieldRunners::RunnerCell::
 slowDown(int count)
 {
   if (slow_ == 0)
@@ -2228,7 +2272,7 @@ slowDown(int count)
 }
 
 void
-CFieldRunners::Runner::
+CFieldRunners::RunnerCell::
 update()
 {
   if (isDying()) {
@@ -2327,7 +2371,7 @@ update()
 }
 
 CFieldRunners::FieldCell *
-CFieldRunners::Runner::
+CFieldRunners::RunnerCell::
 searchNext() const
 {
   SearchField searchField(fieldRunners());
@@ -2349,14 +2393,14 @@ searchNext() const
 }
 
 bool
-CFieldRunners::Runner::
+CFieldRunners::RunnerCell::
 updateDying()
 {
   return true;
 }
 
 void
-CFieldRunners::Runner::
+CFieldRunners::RunnerCell::
 draw()
 {
   int x, y;
@@ -2380,7 +2424,7 @@ draw()
 }
 
 void
-CFieldRunners::Runner::
+CFieldRunners::RunnerCell::
 drawHealthBar(int x, int y)
 {
   double percent =(1.0*getHealth())/getMaxHealth();
@@ -2389,21 +2433,21 @@ drawHealthBar(int x, int y)
 }
 
 ImageId
-CFieldRunners::Runner::
+CFieldRunners::RunnerCell::
 getDeadImage()
 {
   return getFrameImage(0);
 }
 
 int
-CFieldRunners::Runner::
+CFieldRunners::RunnerCell::
 getFrame() const
 {
   return int(dist_) % getNumFrames();
 }
 
 void
-CFieldRunners::Runner::
+CFieldRunners::RunnerCell::
 getXYPos(int &x, int &y) const
 {
   FieldCell *cell;
@@ -2440,7 +2484,7 @@ bool    CFieldRunners::Soldier::imagesLoaded_;
 
 CFieldRunners::Soldier::
 Soldier(CFieldRunners *fieldRunners) :
- Runner(fieldRunners), deadFrame_(0)
+ RunnerCell(fieldRunners), deadFrame_(0)
 {
   if (! imagesLoaded_) {
     auto *window = this->fieldRunners()->getWindow();
@@ -2502,7 +2546,7 @@ bool    CFieldRunners::Mercenary::imagesLoaded_;
 
 CFieldRunners::Mercenary::
 Mercenary(CFieldRunners *fieldRunners) :
- Runner(fieldRunners)
+ RunnerCell(fieldRunners)
 {
   if (! imagesLoaded_) {
     auto *window = this->fieldRunners()->getWindow();
@@ -2531,7 +2575,7 @@ getFrameImage(int frame)
 
 CFieldRunners::Motorbike::
 Motorbike(CFieldRunners *fieldRunners) :
- Runner(fieldRunners)
+ RunnerCell(fieldRunners)
 {
   setHealth(getMaxHealth());
 }
@@ -2552,7 +2596,7 @@ bool    CFieldRunners::Car::imageLoaded_;
 
 CFieldRunners::Car::
 Car(CFieldRunners *fieldRunners) :
- Runner(fieldRunners)
+ RunnerCell(fieldRunners)
 {
   if (! imageLoaded_) {
     auto *window = this->fieldRunners()->getWindow();
@@ -2576,7 +2620,7 @@ getFrameImage(int)
 
 CFieldRunners::Heavybike::
 Heavybike(CFieldRunners *fieldRunners) :
- Runner(fieldRunners)
+ RunnerCell(fieldRunners)
 {
   setHealth(getMaxHealth());
 }
@@ -2597,7 +2641,7 @@ bool    CFieldRunners::Tank::imageLoaded_;
 
 CFieldRunners::Tank::
 Tank(CFieldRunners *fieldRunners) :
- Runner(fieldRunners)
+ RunnerCell(fieldRunners)
 {
   if (! imageLoaded_) {
     auto *window = this->fieldRunners()->getWindow();
@@ -2626,7 +2670,7 @@ bool    CFieldRunners::Helicopter::imageLoaded_;
 
 CFieldRunners::Helicopter::
 Helicopter(CFieldRunners *fieldRunners) :
- Runner(fieldRunners)
+ RunnerCell(fieldRunners)
 {
   if (! imageLoaded_) {
     auto *window = this->fieldRunners()->getWindow();
@@ -2666,7 +2710,7 @@ bool    CFieldRunners::Plane::imageLoaded_;
 
 CFieldRunners::Plane::
 Plane(CFieldRunners *fieldRunners) :
- Runner(fieldRunners)
+ RunnerCell(fieldRunners)
 {
   if (! imageLoaded_) {
     auto *window = this->fieldRunners()->getWindow();
@@ -2706,7 +2750,7 @@ bool    CFieldRunners::Train::imageLoaded_;
 
 CFieldRunners::Train::
 Train(CFieldRunners *fieldRunners) :
- Runner(fieldRunners)
+ RunnerCell(fieldRunners)
 {
   if (! imageLoaded_) {
     auto *window = this->fieldRunners()->getWindow();
@@ -2775,7 +2819,7 @@ searchNext() const
 
 CFieldRunners::Blimp::
 Blimp(CFieldRunners *fieldRunners) :
- Runner(fieldRunners)
+ RunnerCell(fieldRunners)
 {
   setHealth(getMaxHealth());
 }
@@ -2806,19 +2850,19 @@ FieldCell(CFieldRunners *fieldRunners, const CellPos &pos) :
 {
 }
 
-CFieldRunnersWindow *
-CFieldRunners::FieldCell::
-getWindow() const
-{
-  return fieldRunners()->getWindow();
-}
-
 //-----------
 
 CFieldRunners::Cell::
 Cell(CFieldRunners *fieldRunners, const CellPos &pos) :
  fieldRunners_(fieldRunners), pos_(pos)
 {
+}
+
+CFieldRunnersWindow *
+CFieldRunners::Cell::
+getWindow() const
+{
+  return fieldRunners()->getWindow();
 }
 
 //-----------
@@ -2831,7 +2875,25 @@ WeaponCell(CFieldRunners *fieldRunners, const CellPos &pos) :
 
 CFieldRunners::Orient
 CFieldRunners::WeaponCell::
-deltaToOrient(int dx, int dy) const
+deltaToOrient4(int dx, int dy) const
+{
+  Orient orient = ORIENT_NONE;
+
+  if (abs(dx) >= abs(dy)) {
+    if (dx > 0) orient = ORIENT_E;
+    else        orient = ORIENT_W;
+  }
+  else {
+    if (dy > 0) orient = ORIENT_N;
+    else        orient = ORIENT_S;
+  }
+
+  return orient;
+}
+
+CFieldRunners::Orient
+CFieldRunners::WeaponCell::
+deltaToOrient8(int dx, int dy) const
 {
   Orient orient = ORIENT_NONE;
 
@@ -2912,7 +2974,7 @@ CFieldRunners::GunCell::
 update()
 {
   // find nearest enemy and if close enough rotate 1 turn to face
-  int dist, dx, dy;
+  uint dist; int dx, dy;
   auto *minRunner = fieldRunners()->nearestRunner(loc, dist, dx, dy);
   if (! minRunner) return;
 
@@ -2920,7 +2982,7 @@ update()
   if (dist > getRange())
     return;
 
-  auto newOrient = deltaToOrient(dx, dy);
+  auto newOrient = deltaToOrient8(dx, dy);
   if (newOrient == ORIENT_NONE) return;
 
   if (orient() != newOrient)
@@ -2980,7 +3042,7 @@ CFieldRunners::GlueCell::
 update()
 {
   // find nearest enemy and if close enough rotate 1 turn to face
-  int dist, dx, dy;
+  uint dist; int dx, dy;
   auto *minRunner = fieldRunners()->nearestRunner(loc, dist, dx, dy);
   if (! minRunner) return;
 
@@ -2988,7 +3050,7 @@ update()
   if (dist > getRange())
     return;
 
-  auto newOrient = deltaToOrient(dx, dy);
+  auto newOrient = deltaToOrient8(dx, dy);
   if (newOrient == ORIENT_NONE) return;
 
   if (orient() != newOrient)
@@ -3065,7 +3127,7 @@ CFieldRunners::MissileCell::
 update()
 {
   // find nearest enemy and if close enough rotate 1 turn to face
-  int dist, dx, dy;
+  uint dist; int dx, dy;
   auto *minRunner = fieldRunners()->nearestRunner(loc, dist, dx, dy);
   if (! minRunner) return;
 
@@ -3073,26 +3135,26 @@ update()
   if (dist > getRange())
     return;
 
-  auto newOrient = deltaToOrient(dx, dy);
+  auto newOrient = deltaToOrient8(dx, dy);
   if (newOrient == ORIENT_NONE) return;
 
   if (orient() != newOrient) {
     setNewOrient(newOrient);
   }
   else {
-    if (reload_ == 0) {
+    if (reload() == 0) {
       Point point;
 
       fieldRunners()->posToPixel(loc, 0.5, 0.5, point);
 
-      fieldRunners()->emitRocket(point, minRunner, orient());
+      fieldRunners()->emitMissileBullet(point, minRunner, orient());
 
-      reload_ = 12;
+      setReload(12);
     }
   }
 
-  if (reload_ > 0)
-    --reload_;
+  if (reload() > 0)
+    setReload(reload() - 1);
 }
 
 void
@@ -3115,7 +3177,7 @@ CFieldRunners::ShotgunCell::
 update()
 {
   // find nearest enemy
-  int dist;
+  uint dist;
   auto *minRunner = fieldRunners()->nearestRunner(loc, dist);
   if (! minRunner) return;
 
@@ -3157,7 +3219,7 @@ CFieldRunners::ZapCell::
 update()
 {
   // find nearest enemy
-  int dist;
+  uint dist;
   auto *minRunner = fieldRunners()->nearestRunner(loc, dist);
   if (! minRunner) return;
 
@@ -3188,15 +3250,19 @@ CFieldRunners::PulseCell::
 update()
 {
   // find nearest enemy
-  int dist;
-  auto *minRunner = fieldRunners()->nearestRunner(loc, dist);
+  uint dist; int dx, dy;
+  auto *minRunner = fieldRunners()->nearestRunner(loc, dist, dx, dy);
   if (! minRunner) return;
 
   // too far away
   if (dist > getRange())
     return;
 
-  if (reload_ == 0) {
+  // must be save row/column
+  if (dx != 0 && dy != 0)
+    return;
+
+  if (reload() == 0) {
     Point point;
 
     fieldRunners()->posToPixel(loc, 0.5, 0.5, point);
@@ -3206,11 +3272,11 @@ update()
     fieldRunners()->emitPulseBullet(point, ORIENT_E);
     fieldRunners()->emitPulseBullet(point, ORIENT_W);
 
-    reload_ = 12;
+    setReload(12);
   }
 
-  if (reload_ > 0)
-    --reload_;
+  if (reload() > 0)
+    setReload(reload() - 1);
 }
 
 void
@@ -3225,6 +3291,7 @@ CFieldRunners::LaserCell::
 LaserCell(CFieldRunners *fieldRunners, const CellPos &pos) :
  WeaponCell(fieldRunners, pos)
 {
+  setOrient(ORIENT_E);
 }
 
 void
@@ -3232,15 +3299,38 @@ CFieldRunners::LaserCell::
 update()
 {
   // find nearest enemy
-  int dist;
-  auto *minRunner = fieldRunners()->nearestRunner(loc, dist);
+  uint dist; int dx, dy;
+  auto *minRunner = fieldRunners()->nearestRunner(loc, dist, dx, dy);
   if (! minRunner) return;
 
   // too far away
   if (dist > getRange())
     return;
 
-  minRunner->damage(getDamage());
+  // must be save row/column
+  if (dx != 0 && dy != 0)
+    return;
+
+  auto newOrient = deltaToOrient4(dx, dy);
+  if (newOrient == ORIENT_NONE) return;
+
+  if (orient() != newOrient) {
+    setNewOrient(newOrient);
+  }
+  else {
+    if (reload() == 0) {
+      Point point;
+
+      fieldRunners()->posToPixel(loc, 0.5, 0.5, point);
+
+      fieldRunners()->emitLaserBullet(point, orient());
+
+      setReload(30);
+    }
+  }
+
+  if (reload() > 0)
+    setReload(reload() - 1);
 }
 
 void
@@ -3262,7 +3352,7 @@ CFieldRunners::FirebombCell::
 update()
 {
   // find nearest enemy
-  int dist;
+  uint dist;
   auto *minRunner = fieldRunners()->nearestRunner(loc, dist);
   if (! minRunner) return;
 
@@ -3285,6 +3375,9 @@ CFieldRunners::Bullet::
 Bullet(CFieldRunners *fieldRunners, const Point &point) :
  fieldRunners_(fieldRunners), point_(point)
 {
+  static uint s_bullet_id;
+
+  id_ = ++s_bullet_id;
 }
 
 CFieldRunnersWindow *
@@ -3305,11 +3398,11 @@ getWindow() const
 #include "images/rocket7_png.h"
 #include "images/rocket8_png.h"
 
-ImageId CFieldRunners::Rocket::images_[8];
-bool    CFieldRunners::Rocket::imagesLoaded_;
+ImageId CFieldRunners::MissileBullet::images_[8];
+bool    CFieldRunners::MissileBullet::imagesLoaded_;
 
-CFieldRunners::Rocket::
-Rocket(CFieldRunners *fieldRunners, const Point &point, Runner *runner, Orient orient) :
+CFieldRunners::MissileBullet::
+MissileBullet(CFieldRunners *fieldRunners, const Point &point, RunnerCell *runner, Orient orient) :
  Bullet(fieldRunners, point), runner_(runner), orient_(orient)
 {
   if (! imagesLoaded_) {
@@ -3329,14 +3422,14 @@ Rocket(CFieldRunners *fieldRunners, const Point &point, Runner *runner, Orient o
 }
 
 bool
-CFieldRunners::Rocket::
+CFieldRunners::MissileBullet::
 isDone() const
 {
-  return (Bullet::isDone() || runner_->isDone());
+  return (isAtGoal() || runner_->isDone());
 }
 
 void
-CFieldRunners::Rocket::
+CFieldRunners::MissileBullet::
 update()
 {
   Size cellSize;
@@ -3358,7 +3451,7 @@ update()
   if (abs(dx) < dhit && abs(dy) < dhit) {
     setAtGoal(true);
 
-    runner_->damage(getDamage());
+    runner_->bulletDamage(id(), getDamage());
 
     return;
   }
@@ -3398,7 +3491,7 @@ update()
 }
 
 void
-CFieldRunners::Rocket::
+CFieldRunners::MissileBullet::
 setNewOrient(Orient newOrient)
 {
   int orient1 = int(orient());
@@ -3414,7 +3507,7 @@ setNewOrient(Orient newOrient)
 }
 
 void
-CFieldRunners::Rocket::
+CFieldRunners::MissileBullet::
 draw()
 {
   getWindow()->drawImage(point_.x, point_.y, images_[orient()]);
@@ -3441,10 +3534,72 @@ update()
   else if (orient() == ORIENT_S) point_.y -= d;
   else if (orient() == ORIENT_E) point_.x += d;
   else if (orient() == ORIENT_W) point_.x -= d;
+
+  CellPos cellPos;
+  fieldRunners()->pixelToPos(point_, cellPos);
+
+  if (fieldRunners()->isInside(cellPos)) {
+    CFieldRunners::RunnerArray runners;
+    fieldRunners()->getCellRunners(cellPos, runners);
+
+    for (auto *runner : runners)
+      runner->bulletDamage(id(), getDamage());
+  }
+  else {
+    done_ = true;
+  }
 }
 
 void
 CFieldRunners::PulseBullet::
+draw()
+{
+}
+
+//-----------
+
+CFieldRunners::LaserBullet::
+LaserBullet(CFieldRunners *fieldRunners, const Point &point, Orient orient) :
+ Bullet(fieldRunners, point), orient_(orient)
+{
+  life_ = initLife();
+}
+
+void
+CFieldRunners::LaserBullet::
+update()
+{
+  if (life_ > 0)
+    --life_;
+
+  Size cellSize;
+  fieldRunners()->getCellSize(cellSize);
+
+  int dx = 0, dy = 0;
+
+  if      (orient() == ORIENT_N) dy = -1;
+  else if (orient() == ORIENT_S) dy =  1;
+  else if (orient() == ORIENT_E) dx =  1;
+  else if (orient() == ORIENT_W) dx = -1;
+
+  CellPos cellPos;
+  fieldRunners()->pixelToPos(point_, cellPos);
+
+  auto cellPos1 = CellPos(cellPos.row + dy, cellPos.col + dx);
+
+  while (fieldRunners()->isInside(cellPos1)) {
+    CFieldRunners::RunnerArray runners;
+    fieldRunners()->getCellRunners(cellPos1, runners);
+
+    for (auto *runner : runners)
+      runner->bulletDamage(id(), getDamage());
+
+    cellPos1 = CellPos(cellPos1.row + dy, cellPos1.col + dx);
+  }
+}
+
+void
+CFieldRunners::LaserBullet::
 draw()
 {
 }

@@ -42,8 +42,8 @@ class CQFieldRunners : public CFieldRunners {
   LaserCell    *createLaserCell   (const CellPos &pos) override;
   FirebombCell *createFirebombCell(const CellPos &pos) override;
 
-  Entrance *createEntrance(const CellPos &pos) override;
-  Exit     *createExit    (const CellPos &pos) override;
+  EntranceCell *createEntrance(const CellPos &pos) override;
+  ExitCell     *createExit    (const CellPos &pos) override;
 
   Soldier    *createSoldier   () override;
   Mercenary  *createMercenary () override;
@@ -56,9 +56,10 @@ class CQFieldRunners : public CFieldRunners {
   Train      *createTrain     () override;
   Blimp      *createBlimp     () override;
 
-  Rocket *createRocket(const Point &point, Runner *runner, Orient orient) override;
-
-  PulseBullet *createPulseBullet(const Point &point, Orient orient) override;
+  MissileBullet *createMissileBullet(const Point &point, RunnerCell *runner,
+                                     Orient orient) override;
+  PulseBullet   *createPulseBullet  (const Point &point, Orient orient) override;
+  LaserBullet   *createLaserBullet  (const Point &point, Orient orient) override;
 
   void draw() override;
 
@@ -77,6 +78,8 @@ class CQFieldRunners : public CFieldRunners {
   void drawFastForward() override;
   void drawSettings() override;
 
+  void drawSettingsDlg();
+
   void drawAnnotation(int row, int col, int width, int height, const std::string &id) override;
 
   void drawWeaponPrice(CFieldRunners::CellType cellType, int x1, int y1, int w, int h) override;
@@ -85,8 +88,9 @@ class CQFieldRunners : public CFieldRunners {
 
   void drawPriceBg(bool current, int x1, int y1, int w, int h);
 
-  QRect playRect() const { return playRect_; }
-  QRect ffRect() const { return ffRect_; }
+  QRect playRect    () const { return playRect_; }
+  QRect ffRect      () const { return ffRect_; }
+  QRect settingsRect() const { return settingsRect_; }
 
   int inWeaponRect(const QPoint &pos) {
     auto n = weaponRects_.size();
@@ -128,8 +132,9 @@ class CQFieldRunners : public CFieldRunners {
   friend class CQFieldRunnersTrain;
   friend class CQFieldRunnersBlimp;
 
-  friend class CQFieldRunnersRocket;
+  friend class CQFieldRunnersMissileBullet;
   friend class CQFieldRunnersPulseBullet;
+  friend class CQFieldRunnersLaserBullet;
 
  private:
   using Rects = std::vector<QRect>;
@@ -291,7 +296,7 @@ class CQFieldRunnersFirebomb : public CQFieldRunners::FirebombCell {
 
 //---
 
-class CQFieldRunnersEntrance : public CQFieldRunners::Entrance {
+class CQFieldRunnersEntrance : public CQFieldRunners::EntranceCell {
  public:
   CQFieldRunnersEntrance(CQFieldRunners *qFieldRunners, const CFieldRunners::CellPos &pos);
 
@@ -299,7 +304,7 @@ class CQFieldRunnersEntrance : public CQFieldRunners::Entrance {
   CQFieldRunners *qFieldRunners_;
 };
 
-class CQFieldRunnersExit : public CQFieldRunners::Exit {
+class CQFieldRunnersExit : public CQFieldRunners::ExitCell {
  public:
   CQFieldRunnersExit(CQFieldRunners *qFieldRunners, const CFieldRunners::CellPos &pos);
 
@@ -411,10 +416,10 @@ class CQFieldRunnersBlimp : public CQFieldRunners::Blimp {
 
 //---
 
-class CQFieldRunnersRocket : public CQFieldRunners::Rocket {
+class CQFieldRunnersMissileBullet : public CQFieldRunners::MissileBullet {
  public:
-  CQFieldRunnersRocket(CQFieldRunners *qFieldRunners, const Point &point,
-                       CQFieldRunners::Runner *runner, CFieldRunners::Orient orient);
+  CQFieldRunnersMissileBullet(CQFieldRunners *qFieldRunners, const Point &point,
+                              CQFieldRunners::RunnerCell *runner, CFieldRunners::Orient orient);
 
   void draw() override;
 
@@ -425,6 +430,17 @@ class CQFieldRunnersRocket : public CQFieldRunners::Rocket {
 class CQFieldRunnersPulseBullet : public CQFieldRunners::PulseBullet {
  public:
   CQFieldRunnersPulseBullet(CQFieldRunners *qFieldRunners, const Point &point,
+                            CFieldRunners::Orient orient);
+
+  void draw() override;
+
+ private:
+  CQFieldRunners *qFieldRunners_;
+};
+
+class CQFieldRunnersLaserBullet : public CQFieldRunners::LaserBullet {
+ public:
+  CQFieldRunnersLaserBullet(CQFieldRunners *qFieldRunners, const Point &point,
                             CFieldRunners::Orient orient);
 
   void draw() override;
@@ -667,6 +683,11 @@ mousePress(QMouseEvent *event)
     return;
   }
 
+  if (fieldRunners_->settingsRect().contains(epos)) {
+    fieldRunners_->setSettings(! fieldRunners_->isSettings());
+    return;
+  }
+
   int weaponInd = fieldRunners_->inWeaponRect(epos);
 
   if (weaponInd >= 0) {
@@ -882,7 +903,7 @@ fillRectangle(int x1, int y1, int x2, int y2)
   if (p) {
     QBrush brush;
 
-    brush.setColor(p->pen().color());
+    brush.setColor(p->brush().color());
     brush.setStyle(Qt::SolidPattern);
 
     p->fillRect(x1, y1, x2 - x1 + 1, y2 - y1 + 1, brush);
@@ -1077,14 +1098,14 @@ createFirebombCell(const CellPos &pos)
 
 //---
 
-CFieldRunners::Entrance *
+CFieldRunners::EntranceCell *
 CQFieldRunners::
 createEntrance(const CellPos &pos)
 {
   return new CQFieldRunnersEntrance(this, pos);
 }
 
-CFieldRunners::Exit *
+CFieldRunners::ExitCell *
 CQFieldRunners::
 createExit(const CellPos &pos)
 {
@@ -1165,11 +1186,11 @@ createBlimp()
 
 //---
 
-CFieldRunners::Rocket *
+CFieldRunners::MissileBullet *
 CQFieldRunners::
-createRocket(const Point &point, Runner *runner, Orient orient)
+createMissileBullet(const Point &point, RunnerCell *runner, Orient orient)
 {
-  return new CQFieldRunnersRocket(this, point, runner, orient);
+  return new CQFieldRunnersMissileBullet(this, point, runner, orient);
 }
 
 CFieldRunners::PulseBullet *
@@ -1177,6 +1198,13 @@ CQFieldRunners::
 createPulseBullet(const Point &point, Orient orient)
 {
   return new CQFieldRunnersPulseBullet(this, point, orient);
+}
+
+CFieldRunners::LaserBullet *
+CQFieldRunners::
+createLaserBullet(const Point &point, Orient orient)
+{
+  return new CQFieldRunnersLaserBullet(this, point, orient);
 }
 
 //---
@@ -1221,6 +1249,9 @@ draw()
   weaponRects_.clear();
 
   CFieldRunners::draw();
+
+  if (isSettings())
+    drawSettingsDlg();
 }
 
 void
@@ -1262,15 +1293,16 @@ drawHealthBar(int x, int y, double percent)
   int healthHeight = std::max(cellSize.height/10, 3);
 
   // bg (red)
-  canvas->setForeground(QColor(255, 0, 0));
+  canvas->setBackground(QColor(255, 0, 0));
   canvas->fillRectangle(x + 2, y, x + healthWidth, y + healthHeight);
 
   // border (white)
+  canvas->setBackground(QColor(0, 0, 0, 0));
   canvas->setForeground(QColor(255, 255, 255));
   canvas->drawRectangle(x + 2, y, x + healthWidth, y + healthHeight);
 
   // health (green)
-  canvas->setForeground(QColor(0, 255, 0));
+  canvas->setBackground(QColor(0, 255, 0));
   canvas->fillRectangle(x + 2, y, x + int(healthWidth*percent), y + healthHeight);
 }
 
@@ -1366,7 +1398,7 @@ drawPausePlay()
   int w = cellSize.width;
   int h = cellSize.height;
 
-  canvas->setForeground(controlButtonBg());
+  canvas->setBackground(controlButtonBg());
   canvas->fillRectangle(x, y, x + w, y + h);
 
   QImage image;
@@ -1395,7 +1427,7 @@ drawFastForward()
   int w = cellSize.width;
   int h = cellSize.height;
 
-  canvas->setForeground(controlButtonBg());
+  canvas->setBackground(controlButtonBg());
   canvas->fillRectangle(x, y, x + w, y + h);
 
   QImage image;
@@ -1424,7 +1456,7 @@ drawSettings()
   int w = cellSize.width;
   int h = cellSize.height;
 
-  canvas->setForeground(controlButtonBg());
+  canvas->setBackground(controlButtonBg());
   canvas->fillRectangle(x, y, x + w, y + h);
 
   auto image = s_SETTINGS_BUTTON_SVG.image(w, h);
@@ -1432,6 +1464,22 @@ drawSettings()
   canvas->drawImage(x, y, image);
 
   settingsRect_ = QRect(x, y, w, h);
+}
+
+void
+CQFieldRunners::
+drawSettingsDlg()
+{
+  auto *canvas = qWindow()->canvas();
+
+  int w = canvas->width ()/2;
+  int h = canvas->height()*0.8;
+
+  int xc = canvas->width ()/2;
+  int yc = canvas->height()/2;
+
+  canvas->setBackground(QColor(100, 100, 100));
+  canvas->fillRectangle(xc - w/2, yc - h/2, xc + w/2, yc + h/2);
 }
 
 void
@@ -1519,9 +1567,9 @@ drawPriceBg(bool current, int x1, int y1, int w, int h)
   auto *canvas = qWindow()->canvas();
 
   if (current)
-    canvas->setForeground(priceBg());
+    canvas->setBackground(priceBg());
   else
-    canvas->setForeground(canvas->mapColor(bgColor()));
+    canvas->setBackground(canvas->mapColor(bgColor()));
 
   canvas->fillRectangle(x1, y1, x1 + w, y1 + h);
 }
@@ -1694,7 +1742,7 @@ draw()
     auto image = s_SOLDIER_SVG.image(cellSize.width, cellSize.height);
     canvas->drawImage(x, y, image);
 
-    //getWindow()->setForeground(Color(0.2, 0.2, 0.8));
+    //getWindow()->setBackground(Color(0.2, 0.2, 0.8));
     //getWindow()->fillRectangle(x, y, x + cellSize.width, y + cellSize.height);
 
     if (isDamaged())
@@ -2491,7 +2539,10 @@ draw()
 
 //------
 
-#include <svg/laser_weapon_svg.h>
+#include <svg/laser_weapon_n_svg.h>
+#include <svg/laser_weapon_s_svg.h>
+#include <svg/laser_weapon_e_svg.h>
+#include <svg/laser_weapon_w_svg.h>
 
 CQFieldRunnersLaser::
 CQFieldRunnersLaser(CQFieldRunners *qFieldRunners, const CFieldRunners::CellPos &pos) :
@@ -2512,7 +2563,17 @@ draw()
 
   auto *canvas = qFieldRunners_->qWindow()->canvas();
 
-  auto image = s_LASER_WEAPON_SVG.image(bbox.width(), bbox.height());
+  QImage image;
+
+  if      (orient() == CFieldRunners::Orient::ORIENT_N)
+    image = s_LASER_WEAPON_N_SVG.image(bbox.width(), bbox.height());
+  else if (orient() == CFieldRunners::Orient::ORIENT_S)
+    image = s_LASER_WEAPON_S_SVG.image(bbox.width(), bbox.height());
+  else if (orient() == CFieldRunners::Orient::ORIENT_E)
+    image = s_LASER_WEAPON_E_SVG.image(bbox.width(), bbox.height());
+  else if (orient() == CFieldRunners::Orient::ORIENT_W)
+    image = s_LASER_WEAPON_W_SVG.image(bbox.width(), bbox.height());
+
   canvas->drawImage(bbox.xmin, bbox.ymin, image);
 }
 
@@ -2547,7 +2608,7 @@ draw()
 
 CQFieldRunnersEntrance::
 CQFieldRunnersEntrance(CQFieldRunners *qFieldRunners, const CFieldRunners::CellPos &pos) :
- CFieldRunners::Entrance(qFieldRunners, pos), qFieldRunners_(qFieldRunners)
+ CFieldRunners::EntranceCell(qFieldRunners, pos), qFieldRunners_(qFieldRunners)
 {
 }
 
@@ -2555,7 +2616,7 @@ CQFieldRunnersEntrance(CQFieldRunners *qFieldRunners, const CFieldRunners::CellP
 
 CQFieldRunnersExit::
 CQFieldRunnersExit(CQFieldRunners *qFieldRunners, const CFieldRunners::CellPos &pos) :
- CFieldRunners::Exit(qFieldRunners, pos), qFieldRunners_(qFieldRunners)
+ CFieldRunners::ExitCell(qFieldRunners, pos), qFieldRunners_(qFieldRunners)
 {
 }
 
@@ -2571,15 +2632,15 @@ CQFieldRunnersExit(CQFieldRunners *qFieldRunners, const CFieldRunners::CellPos &
 #include <svg/missile_bullet_sw_svg.h>
 #include <svg/missile_bullet_w_svg.h>
 
-CQFieldRunnersRocket::
-CQFieldRunnersRocket(CQFieldRunners *qFieldRunners, const Point &point,
-                     CFieldRunners::Runner *runner, CFieldRunners::Orient orient) :
- CFieldRunners::Rocket(qFieldRunners, point, runner, orient), qFieldRunners_(qFieldRunners)
+CQFieldRunnersMissileBullet::
+CQFieldRunnersMissileBullet(CQFieldRunners *qFieldRunners, const Point &point,
+                            CFieldRunners::RunnerCell *runner, CFieldRunners::Orient orient) :
+ CFieldRunners::MissileBullet(qFieldRunners, point, runner, orient), qFieldRunners_(qFieldRunners)
 {
 }
 
 void
-CQFieldRunnersRocket::
+CQFieldRunnersMissileBullet::
 draw()
 {
   auto p = getPoint();
@@ -2646,4 +2707,41 @@ draw()
   }
 
   canvas->drawImage(p.x - size/2, p.y - size/2, image);
+}
+
+//------
+
+CQFieldRunnersLaserBullet::
+CQFieldRunnersLaserBullet(CQFieldRunners *qFieldRunners, const Point &point,
+                          CFieldRunners::Orient orient) :
+ CFieldRunners::LaserBullet(qFieldRunners, point, orient), qFieldRunners_(qFieldRunners)
+{
+}
+
+void
+CQFieldRunnersLaserBullet::
+draw()
+{
+  auto p = getPoint();
+
+  Size cellSize;
+  qFieldRunners_->getCellSize(cellSize);
+
+  int xsize = cellSize.width /2;
+  int ysize = cellSize.height/2;
+
+  auto *canvas = qFieldRunners_->qWindow()->canvas();
+
+  int a = int((128.0*life())/initLife());
+
+  canvas->setBackground(QColor(255, 255, 0, a));
+
+  if      (orient() == CFieldRunners::Orient::ORIENT_W)
+    canvas->fillRectangle(0, p.y - ysize, p.x - xsize, p.y + ysize);
+  else if (orient() == CFieldRunners::Orient::ORIENT_E)
+    canvas->fillRectangle(p.x + xsize, p.y - ysize, canvas->width(), p.y + ysize);
+  else if (orient() == CFieldRunners::Orient::ORIENT_N)
+    canvas->fillRectangle(p.x - xsize, 0, p.x + xsize, p.y - ysize);
+  else if (orient() == CFieldRunners::Orient::ORIENT_E)
+    canvas->fillRectangle(p.x - xsize, p.y + ysize, p.x + xsize, canvas->height());
 }
