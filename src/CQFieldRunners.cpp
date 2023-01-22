@@ -56,10 +56,12 @@ class CQFieldRunners : public CFieldRunners {
   Train      *createTrain     () override;
   Blimp      *createBlimp     () override;
 
-  MissileBullet *createMissileBullet(const Point &point, RunnerCell *runner,
-                                     Orient orient) override;
-  PulseBullet   *createPulseBullet  (const Point &point, Orient orient) override;
-  LaserBullet   *createLaserBullet  (const Point &point, Orient orient) override;
+  GunBullet     *createGunBullet      (const Point &point, double angle) override;
+  MissileBullet *createMissileBullet  (const Point &point, RunnerCell *runner,
+                                       Orient orient) override;
+  PulseBullet    *createPulseBullet   (const Point &point, Orient orient) override;
+  LaserBullet    *createLaserBullet   (const Point &point, Orient orient) override;
+  FirebombBullet *createFirebombBullet(const Point &point) override;
 
   void draw() override;
 
@@ -132,9 +134,11 @@ class CQFieldRunners : public CFieldRunners {
   friend class CQFieldRunnersTrain;
   friend class CQFieldRunnersBlimp;
 
+  friend class CQFieldRunnersGunBullet;
   friend class CQFieldRunnersMissileBullet;
   friend class CQFieldRunnersPulseBullet;
   friend class CQFieldRunnersLaserBullet;
+  friend class CQFieldRunnersFirebombBullet;
 
  private:
   using Rects = std::vector<QRect>;
@@ -416,6 +420,16 @@ class CQFieldRunnersBlimp : public CQFieldRunners::Blimp {
 
 //---
 
+class CQFieldRunnersGunBullet : public CQFieldRunners::GunBullet {
+ public:
+  CQFieldRunnersGunBullet(CQFieldRunners *qFieldRunners, const Point &point, double a);
+
+  void draw() override;
+
+ private:
+  CQFieldRunners *qFieldRunners_;
+};
+
 class CQFieldRunnersMissileBullet : public CQFieldRunners::MissileBullet {
  public:
   CQFieldRunnersMissileBullet(CQFieldRunners *qFieldRunners, const Point &point,
@@ -442,6 +456,16 @@ class CQFieldRunnersLaserBullet : public CQFieldRunners::LaserBullet {
  public:
   CQFieldRunnersLaserBullet(CQFieldRunners *qFieldRunners, const Point &point,
                             CFieldRunners::Orient orient);
+
+  void draw() override;
+
+ private:
+  CQFieldRunners *qFieldRunners_;
+};
+
+class CQFieldRunnersFirebombBullet : public CQFieldRunners::FirebombBullet {
+ public:
+  CQFieldRunnersFirebombBullet(CQFieldRunners *qFieldRunners, const Point &point);
 
   void draw() override;
 
@@ -1186,6 +1210,13 @@ createBlimp()
 
 //---
 
+CFieldRunners::GunBullet *
+CQFieldRunners::
+createGunBullet(const Point &point, double a)
+{
+  return new CQFieldRunnersGunBullet(this, point, a);
+}
+
 CFieldRunners::MissileBullet *
 CQFieldRunners::
 createMissileBullet(const Point &point, RunnerCell *runner, Orient orient)
@@ -1205,6 +1236,13 @@ CQFieldRunners::
 createLaserBullet(const Point &point, Orient orient)
 {
   return new CQFieldRunnersLaserBullet(this, point, orient);
+}
+
+CFieldRunners::FirebombBullet *
+CQFieldRunners::
+createFirebombBullet(const Point &point)
+{
+  return new CQFieldRunnersFirebombBullet(this, point);
 }
 
 //---
@@ -1718,6 +1756,7 @@ drawSelected(CFieldRunners::FieldCell *cell)
 //------
 
 #include <svg/soldier_svg.h>
+#include <svg/soldier1_svg.h>
 #include <svg/dead_soldier_svg.h>
 
 CQFieldRunnersSoldier::
@@ -1739,7 +1778,8 @@ draw()
   auto *canvas = qFieldRunners_->qWindow()->canvas();
 
   if      (! isDying()) {
-    auto image = s_SOLDIER_SVG.image(cellSize.width, cellSize.height);
+  //auto image = s_SOLDIER_SVG.image(cellSize.width, cellSize.height);
+    auto image = s_SOLDIER1_SVG.image(cellSize.width, cellSize.height);
     canvas->drawImage(x, y, image);
 
     //getWindow()->setBackground(Color(0.2, 0.2, 0.8));
@@ -1757,6 +1797,7 @@ draw()
 //------
 
 #include <svg/mercenary_svg.h>
+#include <svg/mercenary1_svg.h>
 #include <svg/dead_mercenary_svg.h>
 
 CQFieldRunnersMercenary::
@@ -1778,7 +1819,8 @@ draw()
   auto *canvas = qFieldRunners_->qWindow()->canvas();
 
   if      (! isDying()) {
-    auto image = s_MERCENARY_SVG.image(cellSize.width, cellSize.height);
+  //auto image = s_MERCENARY_SVG.image(cellSize.width, cellSize.height);
+    auto image = s_MERCENARY1_SVG.image(cellSize.width, cellSize.height);
     canvas->drawImage(x, y, image);
 
     if (isDamaged())
@@ -2377,7 +2419,14 @@ draw()
 
 //------
 
-#include <svg/glue_weapon_svg.h>
+#include <svg/glue_weapon_n_svg.h>
+#include <svg/glue_weapon_s_svg.h>
+#include <svg/glue_weapon_e_svg.h>
+#include <svg/glue_weapon_w_svg.h>
+#include <svg/glue_weapon_ne_svg.h>
+#include <svg/glue_weapon_nw_svg.h>
+#include <svg/glue_weapon_se_svg.h>
+#include <svg/glue_weapon_sw_svg.h>
 
 CQFieldRunnersGlue::
 CQFieldRunnersGlue(CQFieldRunners *qFieldRunners, const CFieldRunners::CellPos &pos) :
@@ -2396,10 +2445,28 @@ draw()
 
   //---
 
+  int x = bbox.xmin;
+  int y = bbox.ymin;
+  int w = bbox.width();
+  int h = bbox.height();
+
   auto *canvas = qFieldRunners_->qWindow()->canvas();
 
-  auto image = s_GLUE_WEAPON_SVG.image(bbox.width(), bbox.height());
-  canvas->drawImage(bbox.xmin, bbox.ymin, image);
+  QImage image;
+
+  switch (orient()) {
+    case 0: image = s_GLUE_WEAPON_E_SVG .image(w, h); break;
+    case 1: image = s_GLUE_WEAPON_NE_SVG.image(w, h); break;
+    case 2: image = s_GLUE_WEAPON_N_SVG .image(w, h); break;
+    case 3: image = s_GLUE_WEAPON_NW_SVG.image(w, h); break;
+    case 4: image = s_GLUE_WEAPON_W_SVG .image(w, h); break;
+    case 5: image = s_GLUE_WEAPON_SW_SVG.image(w, h); break;
+    case 6: image = s_GLUE_WEAPON_S_SVG .image(w, h); break;
+    case 7: image = s_GLUE_WEAPON_SE_SVG.image(w, h); break;
+    default: assert(false); break;
+  }
+
+  canvas->drawImage(x, y, image);
 }
 
 //------
@@ -2431,7 +2498,14 @@ draw()
 
 //------
 
-#include <svg/missile_weapon_svg.h>
+#include <svg/missile_weapon_n_svg.h>
+#include <svg/missile_weapon_s_svg.h>
+#include <svg/missile_weapon_e_svg.h>
+#include <svg/missile_weapon_w_svg.h>
+#include <svg/missile_weapon_ne_svg.h>
+#include <svg/missile_weapon_se_svg.h>
+#include <svg/missile_weapon_nw_svg.h>
+#include <svg/missile_weapon_sw_svg.h>
 
 CQFieldRunnersMissile::
 CQFieldRunnersMissile(CQFieldRunners *qFieldRunners, const CFieldRunners::CellPos &pos) :
@@ -2450,15 +2524,40 @@ draw()
 
   //---
 
+  int x = bbox.xmin;
+  int y = bbox.ymin;
+  int w = bbox.width();
+  int h = bbox.height();
+
   auto *canvas = qFieldRunners_->qWindow()->canvas();
 
-  auto image = s_MISSILE_WEAPON_SVG.image(bbox.width(), bbox.height());
-  canvas->drawImage(bbox.xmin, bbox.ymin, image);
+  QImage image;
+
+  switch (orient()) {
+    case 0: image = s_MISSILE_WEAPON_E_SVG .image(w, h); break;
+    case 1: image = s_MISSILE_WEAPON_NE_SVG.image(w, h); break;
+    case 2: image = s_MISSILE_WEAPON_N_SVG .image(w, h); break;
+    case 3: image = s_MISSILE_WEAPON_NW_SVG.image(w, h); break;
+    case 4: image = s_MISSILE_WEAPON_W_SVG .image(w, h); break;
+    case 5: image = s_MISSILE_WEAPON_SW_SVG.image(w, h); break;
+    case 6: image = s_MISSILE_WEAPON_S_SVG .image(w, h); break;
+    case 7: image = s_MISSILE_WEAPON_SE_SVG.image(w, h); break;
+    default: assert(false); break;
+  }
+
+  canvas->drawImage(x, y, image);
 }
 
 //------
 
-#include <svg/shotgun_weapon_svg.h>
+#include <svg/shotgun_weapon_n_svg.h>
+#include <svg/shotgun_weapon_s_svg.h>
+#include <svg/shotgun_weapon_e_svg.h>
+#include <svg/shotgun_weapon_w_svg.h>
+#include <svg/shotgun_weapon_ne_svg.h>
+#include <svg/shotgun_weapon_se_svg.h>
+#include <svg/shotgun_weapon_nw_svg.h>
+#include <svg/shotgun_weapon_sw_svg.h>
 
 CQFieldRunnersShotgun::
 CQFieldRunnersShotgun(CQFieldRunners *qFieldRunners, const CFieldRunners::CellPos &pos) :
@@ -2477,10 +2576,28 @@ draw()
 
   //---
 
+  int x = bbox.xmin;
+  int y = bbox.ymin;
+  int w = bbox.width();
+  int h = bbox.height();
+
   auto *canvas = qFieldRunners_->qWindow()->canvas();
 
-  auto image = s_SHOTGUN_WEAPON_SVG.image(bbox.width(), bbox.height());
-  canvas->drawImage(bbox.xmin, bbox.ymin, image);
+  QImage image;
+
+  switch (orient()) {
+    case 0: image = s_SHOTGUN_WEAPON_E_SVG .image(w, h); break;
+    case 1: image = s_SHOTGUN_WEAPON_NE_SVG.image(w, h); break;
+    case 2: image = s_SHOTGUN_WEAPON_N_SVG .image(w, h); break;
+    case 3: image = s_SHOTGUN_WEAPON_NW_SVG.image(w, h); break;
+    case 4: image = s_SHOTGUN_WEAPON_W_SVG .image(w, h); break;
+    case 5: image = s_SHOTGUN_WEAPON_SW_SVG.image(w, h); break;
+    case 6: image = s_SHOTGUN_WEAPON_S_SVG .image(w, h); break;
+    case 7: image = s_SHOTGUN_WEAPON_SE_SVG.image(w, h); break;
+    default: assert(false); break;
+  }
+
+  canvas->drawImage(x, y, image);
 }
 
 //------
@@ -2622,6 +2739,29 @@ CQFieldRunnersExit(CQFieldRunners *qFieldRunners, const CFieldRunners::CellPos &
 
 //------
 
+CQFieldRunnersGunBullet::
+CQFieldRunnersGunBullet(CQFieldRunners *qFieldRunners, const Point &point, double a) :
+ CFieldRunners::GunBullet(qFieldRunners, point, a), qFieldRunners_(qFieldRunners)
+{
+}
+
+void
+CQFieldRunnersGunBullet::
+draw()
+{
+  auto p = getPoint();
+
+  auto *canvas = qFieldRunners_->qWindow()->canvas();
+
+  canvas->setForeground(QColor(0, 0, 0));
+  canvas->setBackground(QColor(0, 0, 0));
+
+  canvas->drawPoint(p.x, p.y);
+  canvas->drawEllipse(p.x - 2, p.y - 2, p.x + 2, p.y + 2);
+}
+
+//------
+
 #include <svg/missile_bullet_e_svg.h>
 #include <svg/missile_bullet_ne_svg.h>
 #include <svg/missile_bullet_n_svg.h>
@@ -2744,4 +2884,61 @@ draw()
     canvas->fillRectangle(p.x - xsize, 0, p.x + xsize, p.y - ysize);
   else if (orient() == CFieldRunners::Orient::ORIENT_E)
     canvas->fillRectangle(p.x - xsize, p.y + ysize, p.x + xsize, canvas->height());
+}
+
+//------
+
+#include <svg/firebomb_bullet_svg.h>
+
+CQFieldRunnersFirebombBullet::
+CQFieldRunnersFirebombBullet(CQFieldRunners *qFieldRunners, const Point &point) :
+ CFieldRunners::FirebombBullet(qFieldRunners, point), qFieldRunners_(qFieldRunners)
+{
+}
+
+void
+CQFieldRunnersFirebombBullet::
+draw()
+{
+  auto p = getPoint();
+
+  Size cellSize;
+  qFieldRunners_->getCellSize(cellSize);
+
+  auto r = radius();
+
+  int xr1 = int((r - 1.0)*cellSize.width /2.0);
+  int yr1 = int((r - 1.0)*cellSize.height/2.0);
+
+  int xr2 = int(r*cellSize.width /2.0);
+  int yr2 = int(r*cellSize.height/2.0);
+
+  auto *canvas = qFieldRunners_->qWindow()->canvas();
+
+  auto da = double(life())/double(initLife());
+
+  auto image = s_FIREBOMB_BULLET_SVG.image(2*xr2, 2*yr2);
+
+  for (int y = 0; y < image.height(); ++y) {
+    int yr = std::abs(-yr2 + y);
+
+    for (int x = 0; x < image.width(); ++x) {
+      int xr = std::abs(-xr2 + x);
+
+      double d = std::hypot(xr, yr);
+
+      auto rgb = image.pixel(x, y);
+
+      auto r = qRed  (rgb);
+      auto g = qGreen(rgb);
+      auto b = qBlue (rgb);
+      auto a = (d > std::min(xr1, yr1) ? qAlpha(rgb) : 0);
+
+      rgb = qRgba(r, g, b, int(da*a));
+
+      image.setPixel(x, y, rgb);
+    }
+  }
+
+  canvas->drawImage(p.x - xr2, p.y - yr2, image);
 }

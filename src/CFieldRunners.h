@@ -14,6 +14,30 @@ using uchar = unsigned char;
 
 #include <ostream>
 
+//! simple point (x/y) structure
+struct Point {
+  int x { 0 };
+  int y { 0 };
+
+  Point() { }
+
+  Point(int x1, int y1) :
+   x(x1), y(y1) {
+  }
+};
+
+//! simple size (width/height) structure
+struct Size {
+  int width  { 0 };
+  int height { 0 };
+
+  Size() { }
+
+  Size(int w, int h) :
+   width(w), height(h) {
+  }
+};
+
 //! simple bounding box structure
 struct BBox {
   int xmin { 0 }, ymin { 0 };
@@ -37,29 +61,9 @@ struct BBox {
 
   int width () const { return xmax - xmin + 1; }
   int height() const { return ymax - ymin + 1; }
-};
 
-//! simple size (width/height) structure
-struct Size {
-  int width  { 0 };
-  int height { 0 };
-
-  Size() { }
-
-  Size(int w, int h) :
-   width(w), height(h) {
-  }
-};
-
-//! simple point (x/y) structure
-struct Point {
-  int x { 0 };
-  int y { 0 };
-
-  Point() { }
-
-  Point(int x1, int y1) :
-   x(x1), y(y1) {
+  bool inside(const Point &p) const {
+    return (p.x >= xmin && p.x <= xmax && p.y >= ymin && p.y <= ymax);
   }
 };
 
@@ -993,6 +997,12 @@ class CFieldRunners {
 
     bool isDone() const { return isAtGoal() || isDead(); }
 
+    int slow() const { return slow_; }
+    void setSlow(int i) { slow_ = i; }
+
+    Orient orient() const { return orient_; }
+    void setOrient(Orient orient) { orient_ = orient; }
+
     // max health
     virtual int getMaxHealth() const = 0;
 
@@ -1023,6 +1033,8 @@ class CFieldRunners {
 
     virtual ImageId getDeadImage();
 
+    bool inside(const BBox &bbox) const;
+
     //! update runner (move to next cell)
     virtual void update();
 
@@ -1042,18 +1054,19 @@ class CFieldRunners {
    protected:
     using BulletSet = std::set<uint>;
 
-    CellPos   goal_;              //!< goal position
-    bool      atGoal_  { false }; //!< made it to the goal position
-    int       health_  { 0 };     //!< current health
-    bool      damaged_ { false }; //!< was damaged
-    bool      dying_   { false }; //!< is dying
-    bool      dead_    { false }; //!< is dead
-    int       slow_    { 0 };     //!< slow down count
-    int       dx_      { 0 };     //!< x distance travelled across current cell (pixels)
-    int       dy_      { 0 };     //!< y distance travelled across current cell (pixels)
-    double    dist_    { 0.0 };   //!< total distance travelled
-    double    speed_   { 0.0 };   //!< speed
-    BulletSet bullets_;           //!< hit bullets
+    CellPos   goal_;                    //!< goal position
+    bool      atGoal_  { false };       //!< made it to the goal position
+    int       health_  { 0 };           //!< current health
+    bool      damaged_ { false };       //!< was damaged
+    bool      dying_   { false };       //!< is dying
+    bool      dead_    { false };       //!< is dead
+    int       slow_    { 0 };           //!< slow down count
+    Orient    orient_  { ORIENT_NONE }; //!< orient
+    int       dx_      { 0 };           //!< x distance travelled across current cell (pixels)
+    int       dy_      { 0 };           //!< y distance travelled across current cell (pixels)
+    double    dist_    { 0.0 };         //!< total distance travelled
+    double    speed_   { 0.0 };         //!< speed
+    BulletSet bullets_;                 //!< hit bullets
   };
 
   using RunnerArray = std::vector<RunnerCell *>;
@@ -1333,6 +1346,26 @@ class CFieldRunners {
 
   //---
 
+  class GunBullet : public Bullet {
+   public:
+    GunBullet(CFieldRunners *fieldRunners, const Point &point, double a);
+
+    virtual ~GunBullet() { }
+
+    uint getDamage() const { return 1; }
+
+    //! update bullet (move to next cell)
+    void update() override;
+
+    //! draw bullet
+    void draw() override;
+
+   private:
+    double a_ { 0.0 };
+  };
+
+  //-----
+
   class MissileBullet : public Bullet {
    public:
     MissileBullet(CFieldRunners *fieldRunners, const Point &point, RunnerCell *runner,
@@ -1417,6 +1450,35 @@ class CFieldRunners {
    private:
     Orient orient_ { ORIENT_NONE };
     int    life_   { 0 };
+  };
+
+  //-----
+
+  class FirebombBullet : public Bullet {
+   public:
+    FirebombBullet(CFieldRunners *fieldRunners, const Point &point);
+
+    virtual ~FirebombBullet() { }
+
+    int initLife() const { return 20; }
+
+    int life() const { return life_; }
+
+    double radius() const { return radius_; }
+
+    uint getDamage() const { return 20; }
+
+    bool isDone() const override { return (life_ == 0); }
+
+    //! update pulse (move to next cell)
+    void update() override;
+
+    //! draw pulse
+    void draw() override;
+
+   private:
+    int    life_   { 0 };
+    double radius_ { 1.0 };
   };
 
   //-----
@@ -1529,9 +1591,12 @@ class CFieldRunners {
   virtual Blimp      *createBlimp();
 
   // bullets
-  virtual MissileBullet *createMissileBullet(const Point &point, RunnerCell *runner, Orient orient);
-  virtual PulseBullet   *createPulseBullet(const Point &point, Orient orient);
-  virtual LaserBullet   *createLaserBullet(const Point &point, Orient orient);
+  virtual GunBullet      *createGunBullet     (const Point &point, double a);
+  virtual MissileBullet  *createMissileBullet (const Point &point, RunnerCell *runner,
+                                               Orient orient);
+  virtual PulseBullet    *createPulseBullet   (const Point &point, Orient orient);
+  virtual LaserBullet    *createLaserBullet   (const Point &point, Orient orient);
+  virtual FirebombBullet *createFirebombBullet(const Point &point);
 
   //---
 
@@ -1588,6 +1653,7 @@ class CFieldRunners {
 
   RunnerCell *getRunner(uint i) const;
 
+  void getCellRunners(const BBox &bbox, RunnerArray &runners) const;
   void getCellRunners(const CellPos &pos, RunnerArray &runners) const;
 
   // get/set buy cell type
@@ -1652,6 +1718,9 @@ class CFieldRunners {
 
   //---
 
+  // send out a gun bullet
+  void emitGunBullet(const Point &point, double a);
+
   // send out a missile bullet (rocket)
   void emitMissileBullet(const Point &point, RunnerCell *runner, Orient orient);
 
@@ -1660,6 +1729,9 @@ class CFieldRunners {
 
   // send out a laser bullet
   void emitLaserBullet(const Point &point, Orient orient);
+
+  // send out a fire bomb bullet
+  void emitFirebombBullet(const Point &point);
 
   //---
 
