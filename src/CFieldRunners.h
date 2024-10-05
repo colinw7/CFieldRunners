@@ -299,6 +299,10 @@ class CFieldRunners {
     void setBBox(const BBox &bbox) { bbox_ = bbox; }
     void getBBox(BBox &bbox) const { bbox = bbox_; }
 
+    // get/set type
+    const CellType &type() const { return cellData_.type; }
+    void setType(const CellType &t) { cellData_.type = t; }
+
     // get/set sub type
     const CellSubType &subType() const { return cellData_.subType; }
     void setSubType(const CellSubType &t) { cellData_.subType = t; }
@@ -979,6 +983,8 @@ class CFieldRunners {
 
     bool isRunner() const override { return true; }
 
+    virtual RunnerType type() const = 0;
+
     // set/get goal position
     const CellPos &getGoal() const { return goal_; }
     void setGoal(const CellPos &goal) { goal_ = goal; }
@@ -1078,6 +1084,8 @@ class CFieldRunners {
    public:
     Soldier(CFieldRunners *fieldRunners);
 
+    RunnerType type() const override { return RunnerType::SOLDIER; }
+
     int getMaxHealth() const override { return 100; }
 
     int getDeathMoney() const override { return 1; }
@@ -1108,6 +1116,8 @@ class CFieldRunners {
    public:
     Mercenary(CFieldRunners *fieldRunners);
 
+    RunnerType type() const override { return RunnerType::MERCENARY; }
+
     int getMaxHealth() const override { return 150; }
 
     int getDeathMoney() const override { return 1; }
@@ -1131,6 +1141,8 @@ class CFieldRunners {
    public:
     Motorbike(CFieldRunners *fieldRunners);
 
+    RunnerType type() const override { return RunnerType::MOTORBIKE; }
+
     int getMaxHealth() const override { return 200; }
 
     int getDeathMoney() const override { return 2; }
@@ -1149,6 +1161,8 @@ class CFieldRunners {
   class Car : public RunnerCell {
    public:
     Car(CFieldRunners *fieldRunners);
+
+    RunnerType type() const override { return RunnerType::CAR; }
 
     int getMaxHealth() const override { return 200; }
 
@@ -1173,6 +1187,8 @@ class CFieldRunners {
    public:
     Heavybike(CFieldRunners *fieldRunners);
 
+    RunnerType type() const override { return RunnerType::HEAVYBIKE; }
+
     int getMaxHealth() const override { return 200; }
 
     int getDeathMoney() const override { return 2; }
@@ -1191,6 +1207,8 @@ class CFieldRunners {
   class Tank : public RunnerCell {
    public:
     Tank(CFieldRunners *fieldRunners);
+
+    RunnerType type() const override { return RunnerType::TANK; }
 
     int getMaxHealth() const override { return 500; }
 
@@ -1214,6 +1232,8 @@ class CFieldRunners {
   class Helicopter : public RunnerCell {
    public:
     Helicopter(CFieldRunners *fieldRunners);
+
+    RunnerType type() const override { return RunnerType::HELICOPTER; }
 
     int getMaxHealth() const override { return 300; }
 
@@ -1240,6 +1260,8 @@ class CFieldRunners {
    public:
     Plane(CFieldRunners *fieldRunners);
 
+    RunnerType type() const override { return RunnerType::PLANE; }
+
     int getMaxHealth() const override { return 300; }
 
     int getDeathMoney() const override { return 3; }
@@ -1264,6 +1286,8 @@ class CFieldRunners {
   class Train : public RunnerCell {
    public:
     Train(CFieldRunners *fieldRunners);
+
+    RunnerType type() const override { return RunnerType::TRAIN; }
 
     int getMaxHealth() const override { return 300; }
 
@@ -1293,6 +1317,8 @@ class CFieldRunners {
   class Blimp : public RunnerCell {
    public:
     Blimp(CFieldRunners *fieldRunners);
+
+    RunnerType type() const override { return RunnerType::BLIMP; }
 
     int getMaxHealth() const override { return 300; }
 
@@ -1532,7 +1558,7 @@ class CFieldRunners {
   using Annotations = std::vector<Annotation>;
 
  public:
-  CFieldRunners(CFieldRunnersWindow *window);
+  CFieldRunners(CFieldRunnersWindow *window=nullptr);
 
   virtual ~CFieldRunners();
 
@@ -1622,7 +1648,6 @@ class CFieldRunners {
   void getSize(Size &size) const;
 
   void getCellSize(Size &size) const { size = cellSize_; }
-
   void setCellSize(const Size &size) { cellSize_ = size; }
 
   int getNumRows() const;
@@ -1829,14 +1854,14 @@ class CFieldRunners {
 
   using LevelRunners = std::map<int, RunnerDatas>;
 
-  Window*      window_;                           //!< Window to draw to
+  Window*      window_      { nullptr };          //!< Window to draw to
   PlayerP      player_;                           //!< Current player
   FieldP       field_;                            //!< Field to run across
   EntranceList entrances_;                        //!< List of entrance for runners
   ExitList     exits_;                            //!< List of exits for runners
   RunnerList   runners_;                          //!< List of runners
   BulletList   bullets_;                          //!< List of bullets
-  Size         cellSize_;                         //!< Cell size
+  Size         cellSize_    { 10, 10};            //!< Cell size
   Color        bgColor_     { 100, 200, 100 };    //!< Bg color
   Color        fgColor_     { 0, 0, 0 };          //!< Fg color
   BgType       bgType_      { BgType::NONE };     //!< Bg type

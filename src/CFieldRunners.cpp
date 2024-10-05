@@ -338,6 +338,8 @@ void
 CFieldRunners::
 getSize(Size &size) const
 {
+  assert(window_);
+
   window_->getSize(size);
 }
 
@@ -1128,6 +1130,7 @@ loadMap(const std::string &filename)
 
       auto *cell = createCell(cellData.type, pos);
 
+      cell->setType(cellData.type);
       cell->setSubType(cellData.subType);
       cell->setDirection(cellData.direction);
       cell->setFunction(cellData.function);
@@ -1583,16 +1586,14 @@ update()
 
   for (int t = 0; t < nt; ++t) {
     // remove done bullets
-    bullets_.erase(
-      std::remove_if(bullets_.begin(), bullets_.end(),
-                     std::mem_fun(&Bullet::isDone)), bullets_.end());
+    bullets_.erase(std::remove_if(bullets_.begin(), bullets_.end(),
+                     [](Bullet *bullet) { return bullet->isDone(); }));
 
     //------
 
     // remove done runners
-    runners_.erase(
-      std::remove_if(runners_.begin(), runners_.end(),
-                     std::mem_fun(&RunnerCell::isDone)), runners_.end());
+    runners_.erase(std::remove_if(runners_.begin(), runners_.end(),
+                     [](RunnerCell *runner) { return runner->isDone(); }));
 
     if (tick_ > levelTicks_ && runners_.empty()) {
       if (level_ < maxLevels()) {
@@ -1667,6 +1668,8 @@ void
 CFieldRunners::
 draw()
 {
+  assert(window_);
+
   Size windowSize;
 
   window_->getSize(windowSize);
@@ -2549,19 +2552,21 @@ Soldier(CFieldRunners *fieldRunners) :
   if (! imagesLoaded_) {
     auto *window = this->fieldRunners()->getWindow();
 
-    images_[0] = window->loadImage(soldier1_data, SOLDIER1_DATA_LEN);
-    images_[1] = window->loadImage(soldier2_data, SOLDIER2_DATA_LEN);
-    images_[2] = window->loadImage(soldier3_data, SOLDIER3_DATA_LEN);
-    images_[3] = window->loadImage(soldier4_data, SOLDIER4_DATA_LEN);
-    images_[4] = window->loadImage(soldier5_data, SOLDIER5_DATA_LEN);
-    images_[5] = window->loadImage(soldier6_data, SOLDIER6_DATA_LEN);
+    if (window) {
+      images_[0] = window->loadImage(soldier1_data, SOLDIER1_DATA_LEN);
+      images_[1] = window->loadImage(soldier2_data, SOLDIER2_DATA_LEN);
+      images_[2] = window->loadImage(soldier3_data, SOLDIER3_DATA_LEN);
+      images_[3] = window->loadImage(soldier4_data, SOLDIER4_DATA_LEN);
+      images_[4] = window->loadImage(soldier5_data, SOLDIER5_DATA_LEN);
+      images_[5] = window->loadImage(soldier6_data, SOLDIER6_DATA_LEN);
 
-    deadImages_[0] = window->loadImage(dead_soldier1_data, DEAD_SOLDIER1_DATA_LEN);
-    deadImages_[1] = window->loadImage(dead_soldier2_data, DEAD_SOLDIER2_DATA_LEN);
-    deadImages_[2] = window->loadImage(dead_soldier3_data, DEAD_SOLDIER3_DATA_LEN);
-    deadImages_[3] = window->loadImage(dead_soldier4_data, DEAD_SOLDIER4_DATA_LEN);
-    deadImages_[4] = window->loadImage(dead_soldier5_data, DEAD_SOLDIER5_DATA_LEN);
-    deadImages_[5] = window->loadImage(dead_soldier6_data, DEAD_SOLDIER6_DATA_LEN);
+      deadImages_[0] = window->loadImage(dead_soldier1_data, DEAD_SOLDIER1_DATA_LEN);
+      deadImages_[1] = window->loadImage(dead_soldier2_data, DEAD_SOLDIER2_DATA_LEN);
+      deadImages_[2] = window->loadImage(dead_soldier3_data, DEAD_SOLDIER3_DATA_LEN);
+      deadImages_[3] = window->loadImage(dead_soldier4_data, DEAD_SOLDIER4_DATA_LEN);
+      deadImages_[4] = window->loadImage(dead_soldier5_data, DEAD_SOLDIER5_DATA_LEN);
+      deadImages_[5] = window->loadImage(dead_soldier6_data, DEAD_SOLDIER6_DATA_LEN);
+    }
 
     imagesLoaded_ = true;
   }
@@ -2611,12 +2616,14 @@ Mercenary(CFieldRunners *fieldRunners) :
   if (! imagesLoaded_) {
     auto *window = this->fieldRunners()->getWindow();
 
-    images_[0] = window->loadImage(grenade1_data, GRENADE1_DATA_LEN);
-    images_[1] = window->loadImage(grenade2_data, GRENADE2_DATA_LEN);
-    images_[2] = window->loadImage(grenade3_data, GRENADE3_DATA_LEN);
-    images_[3] = window->loadImage(grenade4_data, GRENADE4_DATA_LEN);
-    images_[4] = window->loadImage(grenade5_data, GRENADE5_DATA_LEN);
-    images_[5] = window->loadImage(grenade6_data, GRENADE6_DATA_LEN);
+    if (window) {
+      images_[0] = window->loadImage(grenade1_data, GRENADE1_DATA_LEN);
+      images_[1] = window->loadImage(grenade2_data, GRENADE2_DATA_LEN);
+      images_[2] = window->loadImage(grenade3_data, GRENADE3_DATA_LEN);
+      images_[3] = window->loadImage(grenade4_data, GRENADE4_DATA_LEN);
+      images_[4] = window->loadImage(grenade5_data, GRENADE5_DATA_LEN);
+      images_[5] = window->loadImage(grenade6_data, GRENADE6_DATA_LEN);
+    }
 
     imagesLoaded_ = true;
   }
@@ -2661,7 +2668,8 @@ Car(CFieldRunners *fieldRunners) :
   if (! imageLoaded_) {
     auto *window = this->fieldRunners()->getWindow();
 
-    image_ = window->loadImage(car_data, CAR_DATA_LEN);
+    if (window)
+      image_ = window->loadImage(car_data, CAR_DATA_LEN);
 
     imageLoaded_ = true;
   }
@@ -2706,7 +2714,8 @@ Tank(CFieldRunners *fieldRunners) :
   if (! imageLoaded_) {
     auto *window = this->fieldRunners()->getWindow();
 
-    image_ = window->loadImage(tank_data, TANK_DATA_LEN);
+    if (window)
+      image_ = window->loadImage(tank_data, TANK_DATA_LEN);
 
     imageLoaded_ = true;
   }
@@ -2735,7 +2744,8 @@ Helicopter(CFieldRunners *fieldRunners) :
   if (! imageLoaded_) {
     auto *window = this->fieldRunners()->getWindow();
 
-    image_ = window->loadImage(helicopter_data, HELICOPTER_DATA_LEN);
+    if (window)
+      image_ = window->loadImage(helicopter_data, HELICOPTER_DATA_LEN);
 
     imageLoaded_ = true;
   }
@@ -2775,7 +2785,8 @@ Plane(CFieldRunners *fieldRunners) :
   if (! imageLoaded_) {
     auto *window = this->fieldRunners()->getWindow();
 
-    image_ = window->loadImage(plane_data, PLANE_DATA_LEN);
+    if (window)
+      image_ = window->loadImage(plane_data, PLANE_DATA_LEN);
 
     imageLoaded_ = true;
   }
@@ -2815,7 +2826,8 @@ Train(CFieldRunners *fieldRunners) :
   if (! imageLoaded_) {
     auto *window = this->fieldRunners()->getWindow();
 
-    image_ = window->loadImage(plane_data, TRAIN_DATA_LEN);
+    if (window)
+      image_ = window->loadImage(plane_data, TRAIN_DATA_LEN);
 
     imageLoaded_ = true;
   }
@@ -3016,14 +3028,16 @@ GunCell(CFieldRunners *fieldRunners, const CellPos &pos) :
   if (! imagesLoaded_) {
     auto *window = this->fieldRunners()->getWindow();
 
-    images_[0] = window->loadImage(gun1_data, GUN1_DATA_LEN);
-    images_[1] = window->loadImage(gun2_data, GUN2_DATA_LEN);
-    images_[2] = window->loadImage(gun3_data, GUN3_DATA_LEN);
-    images_[3] = window->loadImage(gun4_data, GUN4_DATA_LEN);
-    images_[4] = window->loadImage(gun5_data, GUN5_DATA_LEN);
-    images_[5] = window->loadImage(gun6_data, GUN6_DATA_LEN);
-    images_[6] = window->loadImage(gun7_data, GUN7_DATA_LEN);
-    images_[7] = window->loadImage(gun8_data, GUN8_DATA_LEN);
+    if (window) {
+      images_[0] = window->loadImage(gun1_data, GUN1_DATA_LEN);
+      images_[1] = window->loadImage(gun2_data, GUN2_DATA_LEN);
+      images_[2] = window->loadImage(gun3_data, GUN3_DATA_LEN);
+      images_[3] = window->loadImage(gun4_data, GUN4_DATA_LEN);
+      images_[4] = window->loadImage(gun5_data, GUN5_DATA_LEN);
+      images_[5] = window->loadImage(gun6_data, GUN6_DATA_LEN);
+      images_[6] = window->loadImage(gun7_data, GUN7_DATA_LEN);
+      images_[7] = window->loadImage(gun8_data, GUN8_DATA_LEN);
+    }
 
     imagesLoaded_ = true;
   }
@@ -3104,14 +3118,16 @@ GlueCell(CFieldRunners *fieldRunners, const CellPos &pos) :
   if (! imagesLoaded_) {
     auto *window = this->fieldRunners()->getWindow();
 
-    images_[0] = window->loadImage(glue1_data, GLUE1_DATA_LEN);
-    images_[1] = window->loadImage(glue2_data, GLUE2_DATA_LEN);
-    images_[2] = window->loadImage(glue3_data, GLUE3_DATA_LEN);
-    images_[3] = window->loadImage(glue4_data, GLUE4_DATA_LEN);
-    images_[4] = window->loadImage(glue5_data, GLUE5_DATA_LEN);
-    images_[5] = window->loadImage(glue6_data, GLUE6_DATA_LEN);
-    images_[6] = window->loadImage(glue7_data, GLUE7_DATA_LEN);
-    images_[7] = window->loadImage(glue8_data, GLUE8_DATA_LEN);
+    if (window) {
+      images_[0] = window->loadImage(glue1_data, GLUE1_DATA_LEN);
+      images_[1] = window->loadImage(glue2_data, GLUE2_DATA_LEN);
+      images_[2] = window->loadImage(glue3_data, GLUE3_DATA_LEN);
+      images_[3] = window->loadImage(glue4_data, GLUE4_DATA_LEN);
+      images_[4] = window->loadImage(glue5_data, GLUE5_DATA_LEN);
+      images_[5] = window->loadImage(glue6_data, GLUE6_DATA_LEN);
+      images_[6] = window->loadImage(glue7_data, GLUE7_DATA_LEN);
+      images_[7] = window->loadImage(glue8_data, GLUE8_DATA_LEN);
+    }
 
     imagesLoaded_ = true;
   }
@@ -3189,14 +3205,16 @@ MissileCell(CFieldRunners *fieldRunners, const CellPos &pos) :
   if (! imagesLoaded_) {
     auto *window = this->fieldRunners()->getWindow();
 
-    images_[0] = window->loadImage(missile1_data, MISSILE1_DATA_LEN);
-    images_[1] = window->loadImage(missile2_data, MISSILE2_DATA_LEN);
-    images_[2] = window->loadImage(missile3_data, MISSILE3_DATA_LEN);
-    images_[3] = window->loadImage(missile4_data, MISSILE4_DATA_LEN);
-    images_[4] = window->loadImage(missile5_data, MISSILE5_DATA_LEN);
-    images_[5] = window->loadImage(missile6_data, MISSILE6_DATA_LEN);
-    images_[6] = window->loadImage(missile7_data, MISSILE7_DATA_LEN);
-    images_[7] = window->loadImage(missile8_data, MISSILE8_DATA_LEN);
+    if (window) {
+      images_[0] = window->loadImage(missile1_data, MISSILE1_DATA_LEN);
+      images_[1] = window->loadImage(missile2_data, MISSILE2_DATA_LEN);
+      images_[2] = window->loadImage(missile3_data, MISSILE3_DATA_LEN);
+      images_[3] = window->loadImage(missile4_data, MISSILE4_DATA_LEN);
+      images_[4] = window->loadImage(missile5_data, MISSILE5_DATA_LEN);
+      images_[5] = window->loadImage(missile6_data, MISSILE6_DATA_LEN);
+      images_[6] = window->loadImage(missile7_data, MISSILE7_DATA_LEN);
+      images_[7] = window->loadImage(missile8_data, MISSILE8_DATA_LEN);
+    }
 
     imagesLoaded_ = true;
   }
@@ -3295,7 +3313,8 @@ ZapCell(CFieldRunners *fieldRunners, const CellPos &pos) :
   if (! imageLoaded_) {
     auto *window = this->fieldRunners()->getWindow();
 
-    image_ = window->loadImage(zap_data, ZAP_DATA_LEN);
+    if (window)
+      image_ = window->loadImage(zap_data, ZAP_DATA_LEN);
 
     imageLoaded_ = true;
   }
@@ -3550,14 +3569,16 @@ MissileBullet(CFieldRunners *fieldRunners, const Point &point, RunnerCell *runne
   if (! imagesLoaded_) {
     auto *window = this->fieldRunners()->getWindow();
 
-    images_[0] = window->loadImage(rocket1_data, ROCKET1_DATA_LEN);
-    images_[1] = window->loadImage(rocket2_data, ROCKET2_DATA_LEN);
-    images_[2] = window->loadImage(rocket3_data, ROCKET3_DATA_LEN);
-    images_[3] = window->loadImage(rocket4_data, ROCKET4_DATA_LEN);
-    images_[4] = window->loadImage(rocket5_data, ROCKET5_DATA_LEN);
-    images_[5] = window->loadImage(rocket6_data, ROCKET6_DATA_LEN);
-    images_[6] = window->loadImage(rocket7_data, ROCKET7_DATA_LEN);
-    images_[7] = window->loadImage(rocket8_data, ROCKET8_DATA_LEN);
+    if (window) {
+      images_[0] = window->loadImage(rocket1_data, ROCKET1_DATA_LEN);
+      images_[1] = window->loadImage(rocket2_data, ROCKET2_DATA_LEN);
+      images_[2] = window->loadImage(rocket3_data, ROCKET3_DATA_LEN);
+      images_[3] = window->loadImage(rocket4_data, ROCKET4_DATA_LEN);
+      images_[4] = window->loadImage(rocket5_data, ROCKET5_DATA_LEN);
+      images_[5] = window->loadImage(rocket6_data, ROCKET6_DATA_LEN);
+      images_[6] = window->loadImage(rocket7_data, ROCKET7_DATA_LEN);
+      images_[7] = window->loadImage(rocket8_data, ROCKET8_DATA_LEN);
+    }
 
     imagesLoaded_ = true;
   }
