@@ -462,7 +462,6 @@ class CFieldRunners {
     uint   damage_ { 0 };
     int    level_  { 1 };
     int    reload_ { 0 };
-
   };
 
   //---
@@ -977,6 +976,9 @@ class CFieldRunners {
   // TODO: handle dying/dead/alive
   class RunnerCell : public Cell {
    public:
+    using BulletSet = std::set<uint>;
+
+   public:
     RunnerCell(CFieldRunners *fieldRunners);
 
     virtual ~RunnerCell() { }
@@ -1015,6 +1017,10 @@ class CFieldRunners {
     // get/set health
     int getHealth() const { return health_; }
     void setHealth(int health) { health_ = health; }
+
+    const BulletSet &bullets() const { return bullets_; }
+
+    //---
 
     // damage runner
     void bulletDamage(uint id, uint damage);
@@ -1058,8 +1064,6 @@ class CFieldRunners {
     void getXYPos(int &x, int &y) const;
 
    protected:
-    using BulletSet = std::set<uint>;
-
     CellPos   goal_;                    //!< goal position
     bool      atGoal_  { false };       //!< made it to the goal position
     int       health_  { 0 };           //!< current health
@@ -1643,6 +1647,8 @@ class CFieldRunners {
 
   const Annotations &getAnnotations() const { return annotations_; }
 
+  const BulletList &bullets() const { return bullets_; }
+
   //---
 
   void getSize(Size &size) const;
@@ -1685,8 +1691,10 @@ class CFieldRunners {
   CellType getBuyCellType() const { return buyCellType_; }
   void setBuyCellType(CellType cellType);
 
-  // buy cell
+  // buy (weapon) cell
   Cell *buyCell(const CellPos &pos);
+
+  Cell *addWeaponCell(const CellType &cellType, const CellPos &pos);
 
   // sell cell
   void sellCell(const CellPos &pos);
@@ -1770,6 +1778,10 @@ class CFieldRunners {
 
   RunnerCell *nearestRunner(const CellPos &loc, uint &dist) const;
   RunnerCell *nearestRunner(const CellPos &loc, uint &dist, int &dx, int &dy) const;
+
+  bool isAddPosValid(const CellPos &pos) const;
+
+  //---
 
   void initBuild();
 

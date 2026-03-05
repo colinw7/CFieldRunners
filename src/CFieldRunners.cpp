@@ -70,6 +70,8 @@ createCell(CellType cellType, const CellPos &pos)
 
   assert(cell);
 
+  cell->setType(cellType);
+
   return cell;
 }
 
@@ -179,7 +181,7 @@ CFieldRunners::EntranceCell *
 CFieldRunners::
 createEntrance(const CellPos &pos)
 {
-  std::cerr << "createEntrance\n";
+  //std::cerr << "createEntrance\n";
 
   return new EntranceCell(this, pos);
 }
@@ -188,7 +190,7 @@ CFieldRunners::ExitCell *
 CFieldRunners::
 createExit(const CellPos &pos)
 {
-  std::cerr << "createExit\n";
+  //std::cerr << "createExit\n";
 
   return new ExitCell(this, pos);
 }
@@ -199,7 +201,7 @@ CFieldRunners::Soldier *
 CFieldRunners::
 createSoldier()
 {
-  std::cerr << "createSoldier\n";
+  //std::cerr << "createSoldier\n";
 
   return new Soldier(this);
 }
@@ -208,7 +210,7 @@ CFieldRunners::Mercenary *
 CFieldRunners::
 createMercenary()
 {
-  std::cerr << "createMercenary\n";
+  //std::cerr << "createMercenary\n";
 
   return new Mercenary(this);
 }
@@ -217,7 +219,7 @@ CFieldRunners::Motorbike *
 CFieldRunners::
 createMotorbike()
 {
-  std::cerr << "createMotorbike\n";
+  //std::cerr << "createMotorbike\n";
 
   return new Motorbike(this);
 }
@@ -226,7 +228,7 @@ CFieldRunners::Car *
 CFieldRunners::
 createCar()
 {
-  std::cerr << "createCar\n";
+  //std::cerr << "createCar\n";
 
   return new Car(this);
 }
@@ -235,7 +237,7 @@ CFieldRunners::Heavybike *
 CFieldRunners::
 createHeavybike()
 {
-  std::cerr << "createHeavybike\n";
+  //std::cerr << "createHeavybike\n";
 
   return new Heavybike(this);
 }
@@ -244,7 +246,7 @@ CFieldRunners::Tank *
 CFieldRunners::
 createTank()
 {
-  std::cerr << "createTank\n";
+  //std::cerr << "createTank\n";
 
   return new Tank(this);
 }
@@ -253,7 +255,7 @@ CFieldRunners::Helicopter *
 CFieldRunners::
 createHelicopter()
 {
-  std::cerr << "createHelicopter\n";
+  //std::cerr << "createHelicopter\n";
 
   return new Helicopter(this);
 }
@@ -262,7 +264,7 @@ CFieldRunners::Plane *
 CFieldRunners::
 createPlane()
 {
-  std::cerr << "createPlane\n";
+  //std::cerr << "createPlane\n";
 
   return new Plane(this);
 }
@@ -271,7 +273,7 @@ CFieldRunners::Train *
 CFieldRunners::
 createTrain()
 {
-  std::cerr << "createTrain\n";
+  //std::cerr << "createTrain\n";
 
   return new Train(this);
 }
@@ -280,7 +282,7 @@ CFieldRunners::Blimp *
 CFieldRunners::
 createBlimp()
 {
-  std::cerr << "createBlimp\n";
+  //std::cerr << "createBlimp\n";
 
   return new Blimp(this);
 }
@@ -291,7 +293,7 @@ CFieldRunners::GunBullet *
 CFieldRunners::
 createGunBullet(const Point &point, double a)
 {
-  std::cerr << "createGunBullet\n";
+  //std::cerr << "createGunBullet\n";
 
   return new GunBullet(this, point, a);
 }
@@ -300,7 +302,7 @@ CFieldRunners::MissileBullet *
 CFieldRunners::
 createMissileBullet(const Point &point, RunnerCell *runner, Orient orient)
 {
-  std::cerr << "createMissileBullet\n";
+  //std::cerr << "createMissileBullet\n";
 
   return new MissileBullet(this, point, runner, orient);
 }
@@ -309,7 +311,7 @@ CFieldRunners::PulseBullet *
 CFieldRunners::
 createPulseBullet(const Point &point, Orient orient)
 {
-  std::cerr << "createPulseBullet\n";
+  //std::cerr << "createPulseBullet\n";
 
   return new PulseBullet(this, point, orient);
 }
@@ -318,7 +320,7 @@ CFieldRunners::LaserBullet *
 CFieldRunners::
 createLaserBullet(const Point &point, Orient orient)
 {
-  std::cerr << "createLaserBullet\n";
+  //std::cerr << "createLaserBullet\n";
 
   return new LaserBullet(this, point, orient);
 }
@@ -327,7 +329,7 @@ CFieldRunners::FirebombBullet *
 CFieldRunners::
 createFirebombBullet(const Point &point)
 {
-  std::cerr << "createFirebombBullet\n";
+  //std::cerr << "createFirebombBullet\n";
 
   return new FirebombBullet(this, point);
 }
@@ -448,11 +450,18 @@ buyCell(const CellPos &pos)
   if (player_->getMoney() < price)
     return nullptr;
 
-  int num_rows = getNumRows();
-  int num_cols = getNumCols();
+  auto *cell = addWeaponCell(buyCellType_, pos);
 
-  if (pos.row <= 0 || pos.row >= num_rows - 1 ||
-      pos.col <= 0 || pos.col >= num_cols - 1)
+  player_->subMoney(price);
+
+  return cell;
+}
+
+CFieldRunners::Cell *
+CFieldRunners::
+addWeaponCell(const CellType &cellType, const CellPos &pos)
+{
+  if (! isAddPosValid(pos))
     return nullptr;
 
   FieldCell *cell;
@@ -461,11 +470,9 @@ buyCell(const CellPos &pos)
   if (! cell || ! cell->canAddWeapon())
     return nullptr;
 
-  auto *cell1 = createWeaponCell(buyCellType_, pos);
+  auto *cell1 = createWeaponCell(cellType, pos);
 
   field_->setCell(pos, cell1);
-
-  player_->subMoney(price);
 
   return cell1;
 }
@@ -474,11 +481,7 @@ void
 CFieldRunners::
 sellCell(const CellPos &pos)
 {
-  int num_rows = getNumRows();
-  int num_cols = getNumCols();
-
-  if (pos.row <= 0 || pos.row >= num_rows - 1 ||
-      pos.col <= 0 || pos.col >= num_cols - 1)
+  if (! isAddPosValid(pos))
     return;
 
   FieldCell *cell;
@@ -557,11 +560,7 @@ void
 CFieldRunners::
 addBlockCell(const CellPos &pos)
 {
-  int num_rows = getNumRows();
-  int num_cols = getNumCols();
-
-  if (pos.row <= 0 || pos.row >= num_rows - 1 ||
-      pos.col <= 0 || pos.col >= num_cols - 1)
+  if (! isAddPosValid(pos))
     return;
 
   FieldCell *cell;
@@ -573,6 +572,17 @@ addBlockCell(const CellPos &pos)
 
     field_->setCell(pos, cell1);
   }
+}
+
+bool
+CFieldRunners::
+isAddPosValid(const CellPos &pos) const
+{
+  int num_rows = getNumRows();
+  int num_cols = getNumCols();
+
+  return (pos.row > 0 && pos.row < num_rows - 1 &&
+          pos.col > 0 && pos.col < num_cols - 1);
 }
 
 void
@@ -1130,7 +1140,6 @@ loadMap(const std::string &filename)
 
       auto *cell = createCell(cellData.type, pos);
 
-      cell->setType(cellData.type);
       cell->setSubType(cellData.subType);
       cell->setDirection(cellData.direction);
       cell->setFunction(cellData.function);
@@ -1586,14 +1595,40 @@ update()
 
   for (int t = 0; t < nt; ++t) {
     // remove done bullets
-    bullets_.erase(std::remove_if(bullets_.begin(), bullets_.end(),
-                     [](Bullet *bullet) { return bullet->isDone(); }));
+    if (! bullets_.empty()) {
+#if 0
+      bullets_.erase(std::remove_if(bullets_.begin(), bullets_.end(),
+                       [](Bullet *bullet) { return bullet->isDone(); }));
+#else
+      BulletList bullets;
+
+      for (auto *bullet : bullets_) {
+        if (! bullet->isDone())
+          bullets.push_back(bullet);
+      }
+
+      std::swap(bullets, bullets_);
+#endif
+    }
 
     //------
 
     // remove done runners
-    runners_.erase(std::remove_if(runners_.begin(), runners_.end(),
-                     [](RunnerCell *runner) { return runner->isDone(); }));
+    if (! runners_.empty()) {
+#if 0
+      runners_.erase(std::remove_if(runners_.begin(), runners_.end(),
+                       [](RunnerCell *runner) { return runner->isDone(); }));
+#else
+      RunnerList runners;
+
+      for (auto *runner : runners_) {
+        if (! runner->isDone())
+          runners.push_back(runner);
+      }
+
+      std::swap(runners, runners_);
+#endif
+    }
 
     if (tick_ > levelTicks_ && runners_.empty()) {
       if (level_ < maxLevels()) {
@@ -1816,15 +1851,15 @@ drawWeaponPrices()
   }
 }
 
-#include "images/gun_price_png.h"
-#include "images/glue_price_png.h"
-#include "images/missile_price_png.h"
-#include "images/zap_price_png.h"
+#include <images/gun_price_png.h>
+#include <images/glue_price_png.h>
+#include <images/missile_price_png.h>
+#include <images/zap_price_png.h>
 
-#include "images/gun_price_disable_png.h"
-#include "images/glue_price_disable_png.h"
-#include "images/missile_price_disable_png.h"
-#include "images/zap_price_disable_png.h"
+#include <images/gun_price_disable_png.h>
+#include <images/glue_price_disable_png.h>
+#include <images/missile_price_disable_png.h>
+#include <images/zap_price_disable_png.h>
 
 void
 CFieldRunners::
@@ -2008,7 +2043,7 @@ draw()
 
 //-----------
 
-#include "images/field_png.h"
+#include <images/field_png.h>
 
 CFieldRunners::Field::
 Field(CFieldRunners *fieldRunners) :
@@ -2528,18 +2563,18 @@ getXYPos(int &x, int &y) const
 
 //-----------
 
-#include "images/soldier1_png.h"
-#include "images/soldier2_png.h"
-#include "images/soldier3_png.h"
-#include "images/soldier4_png.h"
-#include "images/soldier5_png.h"
-#include "images/soldier6_png.h"
-#include "images/dead_soldier1_png.h"
-#include "images/dead_soldier2_png.h"
-#include "images/dead_soldier3_png.h"
-#include "images/dead_soldier4_png.h"
-#include "images/dead_soldier5_png.h"
-#include "images/dead_soldier6_png.h"
+#include <images/soldier1_png.h>
+#include <images/soldier2_png.h>
+#include <images/soldier3_png.h>
+#include <images/soldier4_png.h>
+#include <images/soldier5_png.h>
+#include <images/soldier6_png.h>
+#include <images/dead_soldier1_png.h>
+#include <images/dead_soldier2_png.h>
+#include <images/dead_soldier3_png.h>
+#include <images/dead_soldier4_png.h>
+#include <images/dead_soldier5_png.h>
+#include <images/dead_soldier6_png.h>
 
 ImageId CFieldRunners::Soldier::images_[6];
 ImageId CFieldRunners::Soldier::deadImages_[6];
@@ -2599,12 +2634,12 @@ getDeadImage()
 
 //-----------
 
-#include "images/grenade1_png.h"
-#include "images/grenade2_png.h"
-#include "images/grenade3_png.h"
-#include "images/grenade4_png.h"
-#include "images/grenade5_png.h"
-#include "images/grenade6_png.h"
+#include <images/grenade1_png.h>
+#include <images/grenade2_png.h>
+#include <images/grenade3_png.h>
+#include <images/grenade4_png.h>
+#include <images/grenade5_png.h>
+#include <images/grenade6_png.h>
 
 ImageId CFieldRunners::Mercenary::images_[6];
 bool    CFieldRunners::Mercenary::imagesLoaded_;
@@ -2656,7 +2691,7 @@ getFrameImage(int /*frame*/)
 
 //-----------
 
-#include "images/car_png.h"
+#include <images/car_png.h>
 
 ImageId CFieldRunners::Car::image_;
 bool    CFieldRunners::Car::imageLoaded_;
@@ -2702,7 +2737,7 @@ getFrameImage(int /*frame*/)
 
 //-----------
 
-#include "images/tank_png.h"
+#include <images/tank_png.h>
 
 ImageId CFieldRunners::Tank::image_;
 bool    CFieldRunners::Tank::imageLoaded_;
@@ -2732,7 +2767,7 @@ getFrameImage(int)
 
 //-----------
 
-#include "images/helicopter_png.h"
+#include <images/helicopter_png.h>
 
 ImageId CFieldRunners::Helicopter::image_;
 bool    CFieldRunners::Helicopter::imageLoaded_;
@@ -2773,7 +2808,7 @@ searchNext() const
 
 //-----------
 
-#include "images/plane_png.h"
+#include <images/plane_png.h>
 
 ImageId CFieldRunners::Plane::image_;
 bool    CFieldRunners::Plane::imageLoaded_;
@@ -2814,7 +2849,7 @@ searchNext() const
 
 //-----------
 
-#include "images/train_png.h"
+#include <images/train_png.h>
 
 ImageId CFieldRunners::Train::image_;
 bool    CFieldRunners::Train::imageLoaded_;
@@ -3007,14 +3042,14 @@ setNewOrient(Orient newOrient)
 
 //-----------
 
-#include "images/gun1_png.h"
-#include "images/gun2_png.h"
-#include "images/gun3_png.h"
-#include "images/gun4_png.h"
-#include "images/gun5_png.h"
-#include "images/gun6_png.h"
-#include "images/gun7_png.h"
-#include "images/gun8_png.h"
+#include <images/gun1_png.h>
+#include <images/gun2_png.h>
+#include <images/gun3_png.h>
+#include <images/gun4_png.h>
+#include <images/gun5_png.h>
+#include <images/gun6_png.h>
+#include <images/gun7_png.h>
+#include <images/gun8_png.h>
 
 ImageId CFieldRunners::GunCell::images_[8];
 bool    CFieldRunners::GunCell::imagesLoaded_;
@@ -3064,7 +3099,6 @@ update()
   else {
     if (reload() == 0) {
       Point point;
-
       fieldRunners()->posToPixel(loc, 0.5, 0.5, point);
 
       auto a = std::atan2(dy, dx);
@@ -3097,14 +3131,14 @@ draw()
 
 //-----------
 
-#include "images/glue1_png.h"
-#include "images/glue2_png.h"
-#include "images/glue3_png.h"
-#include "images/glue4_png.h"
-#include "images/glue5_png.h"
-#include "images/glue6_png.h"
-#include "images/glue7_png.h"
-#include "images/glue8_png.h"
+#include <images/glue1_png.h>
+#include <images/glue2_png.h>
+#include <images/glue3_png.h>
+#include <images/glue4_png.h>
+#include <images/glue5_png.h>
+#include <images/glue6_png.h>
+#include <images/glue7_png.h>
+#include <images/glue8_png.h>
 
 ImageId CFieldRunners::GlueCell::images_[8];
 bool    CFieldRunners::GlueCell::imagesLoaded_;
@@ -3184,14 +3218,14 @@ draw()
 
 //-----------
 
-#include "images/missile1_png.h"
-#include "images/missile2_png.h"
-#include "images/missile3_png.h"
-#include "images/missile4_png.h"
-#include "images/missile5_png.h"
-#include "images/missile6_png.h"
-#include "images/missile7_png.h"
-#include "images/missile8_png.h"
+#include <images/missile1_png.h>
+#include <images/missile2_png.h>
+#include <images/missile3_png.h>
+#include <images/missile4_png.h>
+#include <images/missile5_png.h>
+#include <images/missile6_png.h>
+#include <images/missile7_png.h>
+#include <images/missile8_png.h>
 
 ImageId CFieldRunners::MissileCell::images_[8];
 bool    CFieldRunners::MissileCell::imagesLoaded_;
@@ -3301,7 +3335,7 @@ draw()
 
 //-----------
 
-#include "images/zap_png.h"
+#include <images/zap_png.h>
 
 ImageId CFieldRunners::ZapCell::image_;
 bool    CFieldRunners::ZapCell::imageLoaded_;
@@ -3550,14 +3584,14 @@ draw()
 
 //-----------
 
-#include "images/rocket1_png.h"
-#include "images/rocket2_png.h"
-#include "images/rocket3_png.h"
-#include "images/rocket4_png.h"
-#include "images/rocket5_png.h"
-#include "images/rocket6_png.h"
-#include "images/rocket7_png.h"
-#include "images/rocket8_png.h"
+#include <images/rocket1_png.h>
+#include <images/rocket2_png.h>
+#include <images/rocket3_png.h>
+#include <images/rocket4_png.h>
+#include <images/rocket5_png.h>
+#include <images/rocket6_png.h>
+#include <images/rocket7_png.h>
+#include <images/rocket8_png.h>
 
 ImageId CFieldRunners::MissileBullet::images_[8];
 bool    CFieldRunners::MissileBullet::imagesLoaded_;
@@ -3619,7 +3653,7 @@ update()
     return;
   }
 
-  double angle = atan2(dy, dx);
+  auto angle = std::atan2(dy, dx);
 
   double da = M_PI/16.0;
 
