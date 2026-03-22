@@ -41,7 +41,7 @@ CFieldRunners::Field *
 CFieldRunners::
 createField()
 {
-  std::cerr << "createField\n";
+  //std::cerr << "createField\n";
 
   return new Field(this);
 }
@@ -67,6 +67,7 @@ createCell(CellType cellType, const CellPos &pos)
   else if (cellType == CellType::PULSE   ) cell = createPulseCell   (pos);
   else if (cellType == CellType::LASER   ) cell = createLaserCell   (pos);
   else if (cellType == CellType::FIREBOMB) cell = createFirebombCell(pos);
+  else if (cellType == CellType::FLAME   ) cell = createFlameCell   (pos);
 
   assert(cell);
 
@@ -175,6 +176,13 @@ createFirebombCell(const CellPos &pos)
   return new FirebombCell(this, pos);
 }
 
+CFieldRunners::FlameCell *
+CFieldRunners::
+createFlameCell(const CellPos &pos)
+{
+  return new FlameCell(this, pos);
+}
+
 //---
 
 CFieldRunners::EntranceCell *
@@ -269,6 +277,15 @@ createPlane()
   return new Plane(this);
 }
 
+CFieldRunners::Cart *
+CFieldRunners::
+createCart()
+{
+  //std::cerr << "createCart\n";
+
+  return new Cart(this);
+}
+
 CFieldRunners::Train *
 CFieldRunners::
 createTrain()
@@ -332,6 +349,24 @@ createFirebombBullet(const Point &point)
   //std::cerr << "createFirebombBullet\n";
 
   return new FirebombBullet(this, point);
+}
+
+CFieldRunners::GlueBullet *
+CFieldRunners::
+createGlueBullet(const Point &point)
+{
+  //std::cerr << "createGlueBullet\n";
+
+  return new GlueBullet(this, point);
+}
+
+CFieldRunners::ZapBullet *
+CFieldRunners::
+createZapBullet(const Point &point1, const Point &point2)
+{
+  //std::cerr << "createZapBullet\n";
+
+  return new ZapBullet(this, point1, point2);
 }
 
 //---
@@ -528,10 +563,10 @@ upgradeCell(FieldCell *cell)
   if (player_->getMoney() < price)
     return false;
 
-  if (weapon->level() >= 3)
+  if (weapon->level() >= weapon->maxLevel())
     return false;
 
-  weapon->setLevel(weapon->level() + 1);
+  weapon->nextLevel();
 
   player_->subMoney(price);
 
@@ -610,10 +645,27 @@ void
 CFieldRunners::
 initBuild()
 {
-  entrances_.clear();
-  exits_    .clear();
+  for (auto *entrance : entrances_)
+    delete entrance;
 
-  tick_  = 0;
+  entrances_.clear();
+
+  for (auto *exit : exits_)
+    delete exit;
+
+  exits_.clear();
+
+  for (auto *runner : runners_)
+    delete runner;
+
+  runners_.clear();
+
+  for (auto *bullet : bullets_)
+    delete bullet;
+
+  bullets_.clear();
+
+  ticks_ = 0;
   level_ = 1;
 
   levelTicks_ = 100;
@@ -860,6 +912,7 @@ loadMap(const std::string &filename)
       else if (fields[2] == "rock" ) cellData.subType = CellSubType::ROCK;
       else if (fields[2] == "grass") cellData.subType = CellSubType::GRASS;
       else if (fields[2] == "stone") cellData.subType = CellSubType::STONE;
+      else if (fields[2] == "tree" ) cellData.subType = CellSubType::TREE;
       else if (fields[2] == "track") cellData.subType = CellSubType::TRACK;
       else if (fields[2] == "igloo") cellData.subType = CellSubType::IGLOO;
       else return errorMsg("Invalid tile sub cell type '" + fields[2] + "'");
@@ -988,6 +1041,7 @@ loadMap(const std::string &filename)
     else if (fields[1] == "tank"      ) runnerType = RunnerType::TANK;
     else if (fields[1] == "helicopter") runnerType = RunnerType::HELICOPTER;
     else if (fields[1] == "plane"     ) runnerType = RunnerType::PLANE;
+    else if (fields[1] == "cart"      ) runnerType = RunnerType::CART;
     else if (fields[1] == "train"     ) runnerType = RunnerType::TRAIN;
     else if (fields[1] == "blimp"     ) runnerType = RunnerType::BLIMP;
     else return errorMsg("Invalid runner type '" + fields[1] + "'");
@@ -1019,6 +1073,7 @@ loadMap(const std::string &filename)
       else if (field == "pulse"   ) weapons.push_back(CellType::PULSE);
       else if (field == "laser"   ) weapons.push_back(CellType::LASER);
       else if (field == "firebomb") weapons.push_back(CellType::FIREBOMB);
+      else if (field == "flame"   ) weapons.push_back(CellType::FLAME);
       else return errorMsg("Invalid weapon '" + field + "'");
     }
   }
@@ -1356,6 +1411,55 @@ emitPlane(const std::string &entranceId)
 
 void
 CFieldRunners::
+emitCart(const std::string &entranceId)
+{
+  auto *cart = createCart();
+
+  //---
+
+  CellPos startPos, endPos;
+  bool    startPosSet { false }, endPosSet { false };
+
+  int rows = getNumRows();
+  int cols = getNumCols();
+
+  for (int row = 0; row < rows; ++row) {
+    for (int col = 0; col < cols; ++col) {
+      FieldCell *cell;
+      getCell(CellPos(row, col), &cell);
+
+      auto *emptyCell = dynamic_cast<EmptyCell *>(cell);
+      if (! emptyCell) continue;
+
+      if      (emptyCell->subType() == CellSubType::TRACK) {
+        if      (emptyCell->function() == CellFunction::ENTRANCE) {
+          if (! startPosSet) {
+            startPos = emptyCell->getPos();
+
+            if (emptyCell->id() == entranceId)
+              startPosSet = true;
+          }
+        }
+        else if (emptyCell->function() == CellFunction::EXIT) {
+          if (! endPosSet ) {
+            endPos = emptyCell->getPos();
+
+            if (emptyCell->id() == entranceId)
+              endPosSet = true;
+          }
+        }
+      }
+    }
+  }
+
+  cart->setPos (startPos);
+  cart->setGoal(endPos);
+
+  runners_.push_back(cart);
+}
+
+void
+CFieldRunners::
 emitTrain(const std::string &entranceId)
 {
   auto *train = createTrain();
@@ -1467,6 +1571,24 @@ emitFirebombBullet(const Point &point)
   bullets_.push_back(bullet);
 }
 
+void
+CFieldRunners::
+emitGlueBullet(const Point &point)
+{
+  auto *bullet = createGlueBullet(point);
+
+  bullets_.push_back(bullet);
+}
+
+void
+CFieldRunners::
+emitZapBullet(const Point &point1, const Point &point2)
+{
+  auto *bullet = createZapBullet(point1, point2);
+
+  bullets_.push_back(bullet);
+}
+
 //---
 
 CFieldRunners::CellPos
@@ -1533,6 +1655,9 @@ CFieldRunners::
 playerLoseLife()
 {
   player_->loseLife();
+
+  if (player_->getLives() <= 0)
+    setState(State::GAME_OVER);
 }
 
 CFieldRunners::RunnerCell *
@@ -1586,7 +1711,7 @@ nearestRunner(const CellPos &loc, uint &dist, int &dx, int &dy) const
 
 void
 CFieldRunners::
-update()
+tick()
 {
   if (isPaused() || isSettings())
     return;
@@ -1630,14 +1755,14 @@ update()
 #endif
     }
 
-    if (tick_ > levelTicks_ && runners_.empty()) {
+    if (ticks_ > levelTicks_ && runners_.empty()) {
       if (level_ < maxLevels()) {
         ++level_;
 
-        tick_       = 0;
+        ticks_      = 0;
         levelTicks_ = 100;
 
-        std::cerr << "Level " << level_ << "\n";
+        //std::cerr << "Level " << level_ << "\n";
       }
     }
 
@@ -1660,23 +1785,23 @@ update()
 
     if (pl != levelRunners_.end()) {
       for (const auto &runnerData : (*pl).second) {
-        if (tick_ == runnerData.ticks) {
+        if (ticks_ == runnerData.ticks) {
           emitRunner(runnerData.type, runnerData.entranceId);
         }
       }
     }
     else {
-      if      (tick_ %  30 == 0) emitRunner(RunnerType::SOLDIER);
-      else if (tick_ %  50 == 0) emitRunner(RunnerType::MERCENARY);
-      else if (tick_ %  55 == 0) emitRunner(RunnerType::TRAIN);
-      else if (tick_ %  70 == 0) emitRunner(RunnerType::CAR);
-      else if (tick_ % 110 == 0) emitRunner(RunnerType::TANK);
-      else if (tick_ % 130 == 0) emitRunner(RunnerType::PLANE);
+      if      (ticks_ %  30 == 0) emitRunner(RunnerType::SOLDIER);
+      else if (ticks_ %  50 == 0) emitRunner(RunnerType::MERCENARY);
+      else if (ticks_ %  70 == 0) emitRunner(RunnerType::CAR);
+      else if (ticks_ %  90 == 0) emitRunner(RunnerType::HELICOPTER);
+      else if (ticks_ % 110 == 0) emitRunner(RunnerType::TANK);
+      else if (ticks_ % 130 == 0) emitRunner(RunnerType::PLANE);
     }
 
     //------
 
-    ++tick_;
+    ++ticks_;
   }
 }
 
@@ -1693,6 +1818,7 @@ emitRunner(RunnerType type, std::string entranceId)
     case RunnerType::TANK      : emitTank      (entranceId); break;
     case RunnerType::HELICOPTER: emitHelicopter(entranceId); break;
     case RunnerType::PLANE     : emitPlane     (entranceId); break;
+    case RunnerType::CART      : emitCart      (entranceId); break;
     case RunnerType::TRAIN     : emitTrain     (entranceId); break;
     case RunnerType::BLIMP     : emitBlimp     (entranceId); break;
     default: assert(false); break;
@@ -1915,6 +2041,7 @@ drawWeaponPrice(CellType cellType, int x1, int y1, int w, int h)
     case CellType::PULSE   : selectImage(zap_price_image    , zap_price_disable_image    ); break;
     case CellType::LASER   : selectImage(zap_price_image    , zap_price_disable_image    ); break;
     case CellType::FIREBOMB: selectImage(zap_price_image    , zap_price_disable_image    ); break;
+    case CellType::FLAME   : selectImage(zap_price_image    , zap_price_disable_image    ); break;
     default: assert(false); break;
  }
 
@@ -1938,6 +2065,7 @@ cellPrice(CellType cellType) const
     case CellType::PULSE   : return CFieldRunners::PulseCell   ::buyPrice();
     case CellType::LASER   : return CFieldRunners::LaserCell   ::buyPrice();
     case CellType::FIREBOMB: return CFieldRunners::FirebombCell::buyPrice();
+    case CellType::FLAME   : return CFieldRunners::FlameCell   ::buyPrice();
     default: assert(false) ; return 0;
   }
 }
@@ -2359,7 +2487,6 @@ CFieldRunners::RunnerCell::
 inside(const BBox &bbox) const
 {
   Point point;
-
   fieldRunners()->posToPixel(getPos(), point);
 
   return bbox.inside(point);
@@ -2396,7 +2523,7 @@ update()
   //int x1 = nextPos.col*cellSize.width;
   //int y1 = nextPos.row*cellSize.height;
 
-    if      (abs(pos.col - nextPos.col) > std::abs(pos.row - nextPos.row)) {
+    if      (std::abs(pos.col - nextPos.col) > std::abs(pos.row - nextPos.row)) {
       // move horizontal (mostly horizontal)
       double d = (nextPos.col > pos.col ? speed : -speed);
 
@@ -2407,7 +2534,7 @@ update()
       dx_   += d1;
       dist_ += d1;
     }
-    else if (abs(pos.row - nextPos.row) > std::abs(pos.col - nextPos.col)) {
+    else if (std::abs(pos.row - nextPos.row) > std::abs(pos.col - nextPos.col)) {
       // move vertical (mostly vertical)
       double d = (nextPos.row > pos.row ? speed : -speed);
 
@@ -2502,7 +2629,6 @@ CFieldRunners::RunnerCell::
 draw()
 {
   int x, y;
-
   getXYPos(x, y);
 
   if (! isDying()) {
@@ -2851,6 +2977,116 @@ searchNext() const
 
 #include <images/train_png.h>
 
+ImageId CFieldRunners::Cart::image_;
+bool    CFieldRunners::Cart::imageLoaded_;
+
+CFieldRunners::Cart::
+Cart(CFieldRunners *fieldRunners) :
+ RunnerCell(fieldRunners)
+{
+  if (! imageLoaded_) {
+    auto *window = this->fieldRunners()->getWindow();
+
+    if (window)
+      image_ = window->loadImage(plane_data, TRAIN_DATA_LEN);
+
+    imageLoaded_ = true;
+  }
+
+  setHealth(getMaxHealth());
+}
+
+ImageId
+CFieldRunners::Cart::
+getFrameImage(int)
+{
+  return image_;
+}
+
+CFieldRunners::FieldCell *
+CFieldRunners::Cart::
+searchNext() const
+{
+  FieldCell *cell;
+  fieldRunners()->getCell(getPos(), &cell);
+
+  if (visited_.find(cell) == visited_.end())
+    visited_.insert(cell);
+
+  int rows = fieldRunners()->getNumRows();
+  int cols = fieldRunners()->getNumCols();
+
+#if 0
+  for (int row = getPos().row - 1; row <= getPos().row + 1; ++row) {
+    if (row < 0 || row >= rows) continue;
+
+    for (int col = getPos().col - 1; col <= getPos().col + 1; ++col) {
+      if (col < 0 || col >= cols) continue;
+
+      FieldCell *cell1;
+      fieldRunners()->getCell(CellPos(row, col), &cell1);
+
+      auto *emptyCell = dynamic_cast<EmptyCell *>(cell1);
+
+      if (emptyCell) {
+        if (emptyCell->subType() == CellSubType::TRACK) {
+          if (visited_.find(emptyCell) == visited_.end())
+            return cell1;
+        }
+      }
+
+      auto *blockCell = dynamic_cast<BlockCell *>(cell1);
+
+      if (blockCell) {
+        if (blockCell->subType() == CellSubType::TRACK) {
+          if (visited_.find(blockCell) == visited_.end())
+            return cell1;
+        }
+      }
+    }
+  }
+#else
+  static std::vector<Point> deltas = {
+    Point(0, -1), Point(-1, 0), Point(1, 0), Point(0, 1)
+  };
+
+  for (const auto &d : deltas) {
+    auto row = getPos().row + d.y;
+    if (row < 0 || row >= rows) continue;
+
+    auto col = getPos().col + d.x;
+    if (col < 0 || col >= cols) continue;
+
+    FieldCell *cell1;
+    fieldRunners()->getCell(CellPos(row, col), &cell1);
+
+    auto *emptyCell = dynamic_cast<EmptyCell *>(cell1);
+
+    if (emptyCell) {
+      if (emptyCell->subType() == CellSubType::TRACK) {
+        if (visited_.find(emptyCell) == visited_.end())
+          return cell1;
+      }
+    }
+
+    auto *blockCell = dynamic_cast<BlockCell *>(cell1);
+
+    if (blockCell) {
+      if (blockCell->subType() == CellSubType::TRACK) {
+        if (visited_.find(blockCell) == visited_.end())
+          return cell1;
+      }
+    }
+  }
+#endif
+
+  return nullptr;
+}
+
+//-----------
+
+#include <images/train_png.h>
+
 ImageId CFieldRunners::Train::image_;
 bool    CFieldRunners::Train::imageLoaded_;
 
@@ -3187,6 +3423,11 @@ update()
     setNewOrient(newOrient);
   else
     minRunner->slowDown(60);
+
+  Point point;
+  fieldRunners()->posToPixel(loc, 0.5, 0.5, point);
+
+  fieldRunners()->emitGlueBullet(point);
 }
 
 void
@@ -3276,7 +3517,6 @@ update()
   else {
     if (reload() == 0) {
       Point point;
-
       fieldRunners()->posToPixel(loc, 0.5, 0.5, point);
 
       fieldRunners()->emitMissileBullet(point, minRunner, orient());
@@ -3367,6 +3607,14 @@ update()
   if (dist > getRange())
     return;
 
+  Point point;
+  fieldRunners()->posToPixel(loc, 0.5, 0.5, point);
+
+  Point point1;
+  fieldRunners()->posToPixel(minRunner->getPos(), 0.5, 0.5, point1);
+
+  fieldRunners()->emitZapBullet(point, point1);
+
   minRunner->damage(getDamage());
 }
 
@@ -3404,7 +3652,6 @@ update()
 
   if (reload() == 0) {
     Point point;
-
     fieldRunners()->posToPixel(loc, 0.5, 0.5, point);
 
     fieldRunners()->emitPulseBullet(point, ORIENT_N);
@@ -3460,7 +3707,6 @@ update()
   else {
     if (reload() == 0) {
       Point point;
-
       fieldRunners()->posToPixel(loc, 0.5, 0.5, point);
 
       fieldRunners()->emitLaserBullet(point, orient());
@@ -3502,7 +3748,6 @@ update()
 
   if (reload() == 0) {
     Point point;
-
     fieldRunners()->posToPixel(loc, 0.5, 0.5, point);
 
     fieldRunners()->emitFirebombBullet(point);
@@ -3522,9 +3767,67 @@ draw()
 
 //-----------
 
+ImageId CFieldRunners::FlameCell::images_[8];
+bool    CFieldRunners::FlameCell::imagesLoaded_;
+
+CFieldRunners::FlameCell::
+FlameCell(CFieldRunners *fieldRunners, const CellPos &pos) :
+ WeaponCell(fieldRunners, pos)
+{
+  setOrient(ORIENT_E);
+
+  if (! imagesLoaded_) {
+    auto *window = this->fieldRunners()->getWindow();
+
+    if (window) {
+      images_[0] = window->loadImage(glue1_data, GLUE1_DATA_LEN);
+      images_[1] = window->loadImage(glue2_data, GLUE2_DATA_LEN);
+      images_[2] = window->loadImage(glue3_data, GLUE3_DATA_LEN);
+      images_[3] = window->loadImage(glue4_data, GLUE4_DATA_LEN);
+      images_[4] = window->loadImage(glue5_data, GLUE5_DATA_LEN);
+      images_[5] = window->loadImage(glue6_data, GLUE6_DATA_LEN);
+      images_[6] = window->loadImage(glue7_data, GLUE7_DATA_LEN);
+      images_[7] = window->loadImage(glue8_data, GLUE8_DATA_LEN);
+    }
+
+    imagesLoaded_ = true;
+  }
+}
+
+void
+CFieldRunners::FlameCell::
+update()
+{
+  // find nearest enemy and if close enough rotate 1 turn to face
+  uint dist; int dx, dy;
+  auto *minRunner = fieldRunners()->nearestRunner(loc, dist, dx, dy);
+  if (! minRunner) return;
+
+  // too far away
+  if (dist > getRange())
+    return;
+
+  auto newOrient = deltaToOrient8(dx, dy);
+  if (newOrient == ORIENT_NONE) return;
+
+  if (orient() != newOrient)
+    setNewOrient(newOrient);
+  else
+    minRunner->slowDown(60);
+}
+
+void
+CFieldRunners::FlameCell::
+draw()
+{
+  getWindow()->drawCellImage(bbox_.xmin, bbox_.ymin, images_[orient()]);
+}
+
+//-----------
+
 CFieldRunners::Bullet::
-Bullet(CFieldRunners *fieldRunners, const Point &point) :
- fieldRunners_(fieldRunners), point_(point)
+Bullet(CFieldRunners *fieldRunners, BulletType bulletType, const Point &point) :
+ fieldRunners_(fieldRunners), bulletType_(bulletType), point_(point)
 {
   static uint s_bullet_id;
 
@@ -3542,7 +3845,7 @@ getWindow() const
 
 CFieldRunners::GunBullet::
 GunBullet(CFieldRunners *fieldRunners, const Point &point, double a) :
- Bullet(fieldRunners, point), a_(a)
+ Bullet(fieldRunners, BulletType::BULLET, point), a_(a)
 {
 }
 
@@ -3598,7 +3901,7 @@ bool    CFieldRunners::MissileBullet::imagesLoaded_;
 
 CFieldRunners::MissileBullet::
 MissileBullet(CFieldRunners *fieldRunners, const Point &point, RunnerCell *runner, Orient orient) :
- Bullet(fieldRunners, point), runner_(runner), orient_(orient)
+ Bullet(fieldRunners, BulletType::MISSILE, point), runner_(runner), orient_(orient)
 {
   if (! imagesLoaded_) {
     auto *window = this->fieldRunners()->getWindow();
@@ -3714,7 +4017,7 @@ draw()
 
 CFieldRunners::PulseBullet::
 PulseBullet(CFieldRunners *fieldRunners, const Point &point, Orient orient) :
- Bullet(fieldRunners, point), orient_(orient)
+ Bullet(fieldRunners, BulletType::PULSE, point), orient_(orient)
 {
 }
 
@@ -3757,7 +4060,7 @@ draw()
 
 CFieldRunners::LaserBullet::
 LaserBullet(CFieldRunners *fieldRunners, const Point &point, Orient orient) :
- Bullet(fieldRunners, point), orient_(orient)
+ Bullet(fieldRunners, BulletType::LASER, point), orient_(orient)
 {
   life_ = initLife();
 }
@@ -3805,7 +4108,7 @@ draw()
 
 CFieldRunners::FirebombBullet::
 FirebombBullet(CFieldRunners *fieldRunners, const Point &point) :
- Bullet(fieldRunners, point)
+ Bullet(fieldRunners, BulletType::FIREBOMB, point)
 {
   life_   = initLife();
   radius_ = 2.0;
@@ -3838,6 +4141,54 @@ update()
 
 void
 CFieldRunners::FirebombBullet::
+draw()
+{
+}
+
+//-----------
+
+CFieldRunners::GlueBullet::
+GlueBullet(CFieldRunners *fieldRunners, const Point &point) :
+ Bullet(fieldRunners, BulletType::GLUE, point)
+{
+  life_   = initLife();
+  radius_ = 2.0;
+}
+
+void
+CFieldRunners::GlueBullet::
+update()
+{
+  if (life_ > 0)
+    --life_;
+}
+
+void
+CFieldRunners::GlueBullet::
+draw()
+{
+}
+
+//-----------
+
+CFieldRunners::ZapBullet::
+ZapBullet(CFieldRunners *fieldRunners, const Point &point1, const Point &point2) :
+ Bullet(fieldRunners, BulletType::ZAP, point1), target_(point2)
+{
+  life_   = initLife();
+  radius_ = 2.0;
+}
+
+void
+CFieldRunners::ZapBullet::
+update()
+{
+  if (life_ > 0)
+    --life_;
+}
+
+void
+CFieldRunners::ZapBullet::
 draw()
 {
 }

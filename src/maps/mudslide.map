@@ -16,8 +16,8 @@ X,block,track,e
 x,empty,track,e
 Y,block,track,n
 y,empty,track,n
-Z,empty,track,none,entrance,2
-z,empty,track,none,exit,2
+Z,empty,track,n,entrance,2
+z,empty,track,n,exit,2
 \,block,track,sw
 /,block,track,se
 :,block,track,nw

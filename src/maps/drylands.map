@@ -6,21 +6,22 @@ bg=drylands
 border=drylands
 
 # char,type,subtype,direction,function,id
-B,border,none,none,none,0
-C,border,none,none,none,1
+B,border,tree,none,none,0
+C,border,rock,none,none,1
 .,empty,none
-E,empty,none,none,entrance,1
-e,empty,none,none,exit,1
-F,empty,none,none,entrance,2
-f,empty,none,none,exit,2
+E,empty,track,none,entrance,1
+e,empty,track,none,exit,1
+F,empty,track,none,entrance,2
+f,empty,track,none,exit,2
 G,empty,none,none,entrance,3
 g,empty,none,none,exit,3
-a,empty,none,none,epath
+a,empty,track,none,epath
+A,empty,none,none,epath
 
 BBBBBBBBBBBGBBBBBBBBBBB
-BBBBBBBBBBBaBBBBBBBBBBB
-BBBBBBBBBBBaBBBBBBBBBBB
-Eaa........a........aae
+BBBBBBBBBBBABBBBBBBBBBB
+BBBBBBBBBBBABBBBBBBBBBB
+Eaa........A........aae
 CC...................CC
 CC...................CC
 CC...................CC
@@ -30,8 +31,8 @@ CC...................CC
 CC...................CC
 CC...................CC
 CC...................CC
-Faa........a........aaf
-BBBBBBBBBBBaBBBBBBBBBBB
+Faa........A........aaf
+BBBBBBBBBBBABBBBBBBBBBB
 BBBBBBBBBBBgBBBBBBBBBBB
 
 # char,runner_type

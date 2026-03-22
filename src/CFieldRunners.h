@@ -80,6 +80,8 @@ struct Color {
 
 using ImageId = unsigned int;
 
+//---
+
 //! virtual class for window/graphic display
 class CFieldRunnersWindow {
  public:
@@ -113,15 +115,19 @@ class CFieldRunnersWindow {
   virtual ImageId loadImage(const uchar *data, uint len) = 0;
 };
 
+//---
+
 //! Field Runners Class
 class CFieldRunners {
  public:
-  //! Position (row,col)
+  //! Position (row, col)
   struct CellPos {
-    int row;
-    int col;
+    int row { -1 };
+    int col { -1 };
 
-    CellPos(int row1=0, int col1=0) :
+    CellPos() { }
+
+    CellPos(int row1, int col1) :
      row(row1), col(col1) {
     }
 
@@ -130,7 +136,7 @@ class CFieldRunners {
       return (row == pos.row && col == pos.col);
     }
 
-    // equality
+    // inequality
     bool operator!=(const CellPos &pos) const {
       return ! operator==(pos);
     }
@@ -151,6 +157,7 @@ class CFieldRunners {
  public:
   // state
   enum class State {
+    SETUP,
     ACTIVE,
     GAME_OVER
   };
@@ -174,13 +181,13 @@ class CFieldRunners {
     NONE,
     TREE,
     GRASSLANDS,
-    CRYSTAL,
     CROSSROADS,
-    FROSTBITE,
     DRYLANDS,
-    LAVAFLOW,
+    CRYSTAL,
     SKYWAY,
-    MUDSLIDE
+    FROSTBITE,
+    MUDSLIDE,
+    LAVAFLOW
   };
 
   // cell type
@@ -201,7 +208,8 @@ class CFieldRunners {
     ZAP      = WEAPON_CELL + 6,
     PULSE    = WEAPON_CELL + 7,
     LASER    = WEAPON_CELL + 8,
-    FIREBOMB = WEAPON_CELL + 9
+    FIREBOMB = WEAPON_CELL + 9,
+    FLAME    = WEAPON_CELL + 10
   };
 
   // cell sub type
@@ -209,6 +217,7 @@ class CFieldRunners {
     NONE,
     ROCK,
     GRASS,
+    TREE,
     STONE,
     TRACK,
     IGLOO
@@ -235,6 +244,7 @@ class CFieldRunners {
     EPATH
   };
 
+  // cell data
   struct CellData {
     char          c           { '\0' };
     CellType      type        { CellType::NONE };
@@ -246,6 +256,7 @@ class CFieldRunners {
     bool          transparent { false };
   };
 
+  // runner type
   enum class RunnerType {
     NONE,
     SOLDIER,
@@ -256,11 +267,25 @@ class CFieldRunners {
     TANK,
     HELICOPTER,
     PLANE,
+    CART,
     TRAIN,
     BLIMP
   };
 
+  // bullet type
+  enum class BulletType {
+    NONE,
+    BULLET,
+    GLUE,
+    MISSILE,
+    PULSE,
+    LASER,
+    FIREBOMB,
+    ZAP
+  };
+
  public:
+  //! Base Class for Cell
   class Cell {
    public:
     Cell(CFieldRunners *fieldRunners, const CellPos &pos);
@@ -442,8 +467,12 @@ class CFieldRunners {
 
     //--
 
+    int maxLevel() const { return 3; }
+
     int level() const { return level_; }
     void setLevel(int i) { level_ = i; }
+
+    void nextLevel() { if (level_ < maxLevel()) ++level_; }
 
     //---
 
@@ -785,6 +814,47 @@ class CFieldRunners {
 
   //---
 
+  //! Flame Weapon Cell
+  class FlameCell : public WeaponCell {
+   public:
+    static int buyPrice() { return 10; }
+
+    FlameCell(CFieldRunners *fieldRunners, const CellPos &pos);
+
+    //! buy price
+    int getBuyPrice() const override { return buyPrice(); }
+
+    //! sell price
+    int getSellPrice() const override {
+      if (level() == 3) return 15;
+      if (level() == 2) return 10;
+      return 5;
+    }
+
+    int getUpgradePrice() const override {
+      if (level() == 2) return 4;
+      return 4;
+    }
+
+    // get damage weapon makes on hit
+    uint getDamage() const override { return 10; }
+
+    //! range (how close to detect/shoot)
+    uint getRange() const override { return 3; }
+
+    // update glue
+    void update() override;
+
+    // draw glue
+    void draw() override;
+
+   private:
+    static ImageId images_[8];    //! images for gun (rotate 0-315 by 45)
+    static bool    imagesLoaded_; //! are images loaded ?
+  };
+
+  //---
+
   //! Regular Grid of Cells (rows x cols)
   // TODO always regular grid ?
   class CellArray {
@@ -1022,6 +1092,11 @@ class CFieldRunners {
 
     //---
 
+    int getDx() const { return dx_; }
+    int getDy() const { return dy_; }
+
+    //---
+
     // damage runner
     void bulletDamage(uint id, uint damage);
     void damage(uint damage);
@@ -1056,12 +1131,14 @@ class CFieldRunners {
     //! draw runner
     virtual void draw();
 
+    //---
+
+    void getXYPos(int &x, int &y) const;
+
    protected:
     void drawHealthBar(int x, int y);
 
     int getFrame() const;
-
-    void getXYPos(int &x, int &y) const;
 
    protected:
     CellPos   goal_;                    //!< goal position
@@ -1286,6 +1363,37 @@ class CFieldRunners {
 
   //---
 
+  //! Cart Runner
+  class Cart : public RunnerCell {
+   public:
+    Cart(CFieldRunners *fieldRunners);
+
+    RunnerType type() const override { return RunnerType::CART; }
+
+    int getMaxHealth() const override { return 300; }
+
+    int getDeathMoney() const override { return 3; }
+    int getDeathScore() const override { return 100; }
+
+    double getSpeed() const override { return 0.5; }
+
+    int getNumFrames() const override { return 1; }
+
+    ImageId getFrameImage(int frame) override;
+
+    FieldCell *searchNext() const override;
+
+   private:
+    static ImageId image_;       //! image
+    static bool    imageLoaded_; //! is image loaded ?
+
+    using CellSet = std::set<FieldCell *>;
+
+    mutable CellSet visited_;
+  };
+
+  //---
+
   //! Train Runner
   class Train : public RunnerCell {
    public:
@@ -1344,7 +1452,7 @@ class CFieldRunners {
   //! (Virtual - derive from this for different types of bullets)
   class Bullet {
    public:
-    Bullet(CFieldRunners *fieldRunners, const Point &point);
+    Bullet(CFieldRunners *fieldRunners, BulletType bulletType, const Point &point);
 
     virtual ~Bullet() { }
 
@@ -1353,6 +1461,9 @@ class CFieldRunners {
     CFieldRunnersWindow *getWindow() const;
 
     uint id() const { return id_; }
+
+    const BulletType &bulletType() const { return bulletType_; }
+    void setBulletType(const BulletType &v) { bulletType_ = v; }
 
     // get/set current point
     void setPoint(const Point &point) { point_ = point; }
@@ -1368,6 +1479,8 @@ class CFieldRunners {
 
    protected:
     CFieldRunners *fieldRunners_;
+
+    BulletType bulletType_ { BulletType::NONE };
 
     uint  id_   { 0 };
     Point point_;  //! current point
@@ -1513,6 +1626,67 @@ class CFieldRunners {
 
   //-----
 
+  class GlueBullet : public Bullet {
+   public:
+    GlueBullet(CFieldRunners *fieldRunners, const Point &point);
+
+    virtual ~GlueBullet() { }
+
+    int initLife() const { return 20; }
+
+    int life() const { return life_; }
+
+    double radius() const { return radius_; }
+
+    uint getDamage() const { return 20; }
+
+    bool isDone() const override { return (life_ == 0); }
+
+    //! update zap (age)
+    void update() override;
+
+    //! draw zap
+    void draw() override;
+
+   private:
+    int    life_   { 0 };
+    double radius_ { 1.0 };
+  };
+
+  //---
+
+  class ZapBullet : public Bullet {
+   public:
+    ZapBullet(CFieldRunners *fieldRunners, const Point &point1, const Point &point2);
+
+    virtual ~ZapBullet() { }
+
+    int initLife() const { return 20; }
+
+    int life() const { return life_; }
+
+    double radius() const { return radius_; }
+
+    uint getDamage() const { return 20; }
+
+    bool isDone() const override { return (life_ == 0); }
+
+    const Point &target() const { return target_; }
+
+    //! update zap (age)
+    void update() override;
+
+    //! draw zap
+    void draw() override;
+
+   private:
+    int    life_   { 0 };
+    double radius_ { 1.0 };
+    Point  target_ { 0, 0 };
+  };
+
+  //-----
+
   // AStar search class
   class SearchField : public CAStar<CellPos> {
    protected:
@@ -1603,6 +1777,7 @@ class CFieldRunners {
   virtual PulseCell    *createPulseCell   (const CellPos &pos);
   virtual LaserCell    *createLaserCell   (const CellPos &pos);
   virtual FirebombCell *createFirebombCell(const CellPos &pos);
+  virtual FlameCell    *createFlameCell   (const CellPos &pos);
 
   // entrance/exit
   virtual EntranceCell *createEntrance(const CellPos &pos);
@@ -1617,6 +1792,7 @@ class CFieldRunners {
   virtual Tank       *createTank();
   virtual Helicopter *createHelicopter();
   virtual Plane      *createPlane();
+  virtual Cart       *createCart();
   virtual Train      *createTrain();
   virtual Blimp      *createBlimp();
 
@@ -1627,6 +1803,8 @@ class CFieldRunners {
   virtual PulseBullet    *createPulseBullet   (const Point &point, Orient orient);
   virtual LaserBullet    *createLaserBullet   (const Point &point, Orient orient);
   virtual FirebombBullet *createFirebombBullet(const Point &point);
+  virtual GlueBullet     *createGlueBullet    (const Point &point);
+  virtual ZapBullet      *createZapBullet     (const Point &point1, const Point &point2);
 
   //---
 
@@ -1638,6 +1816,15 @@ class CFieldRunners {
 
   uint startLives() const { return startLives_; }
   void setStartLives(uint i) { startLives_ = i; }
+
+  uint ticks() const { return ticks_; }
+
+  //---
+
+  const State &getState() const { return state_; }
+  void setState(const State &v) { state_ = v; stateChanged(); }
+
+  virtual void stateChanged() { }
 
   //---
 
@@ -1743,6 +1930,9 @@ class CFieldRunners {
   // send out a plane
   void emitPlane(const std::string &entranceId="");
 
+  // send out a cart
+  void emitCart(const std::string &entranceId="");
+
   // send out a train
   void emitTrain(const std::string &entranceId="");
 
@@ -1765,6 +1955,12 @@ class CFieldRunners {
 
   // send out a fire bomb bullet
   void emitFirebombBullet(const Point &point);
+
+  // send out a glue bullet
+  void emitGlueBullet(const Point &point);
+
+  // send out a zap bullet
+  void emitZapBullet(const Point &point1, const Point &point2);
 
   //---
 
@@ -1806,7 +2002,7 @@ class CFieldRunners {
   void setSettings(bool b) { settings_ = b; }
 
   //! update game
-  virtual void update();
+  virtual void tick();
 
   void emitRunner(RunnerType type, std::string entranceId="");
 
@@ -1873,24 +2069,27 @@ class CFieldRunners {
   ExitList     exits_;                            //!< List of exits for runners
   RunnerList   runners_;                          //!< List of runners
   BulletList   bullets_;                          //!< List of bullets
-  Size         cellSize_    { 10, 10};            //!< Cell size
-  Color        bgColor_     { 100, 200, 100 };    //!< Bg color
-  Color        fgColor_     { 0, 0, 0 };          //!< Fg color
+  Size         cellSize_    { 10, 10};            //!< Cell size (sub cell grid size)
+  State        state_       { State::SETUP };     //!< Current game state
   BgType       bgType_      { BgType::NONE };     //!< Bg type
   BorderType   borderType_  { BorderType::NONE }; //!< Border type
   bool         paused_      { false };            //!< is paused
   bool         fastForward_ { false };            //!< is fast forward
   bool         settings_    { false };            //!< is settings
-  uint         tick_        { 0 };                //!< Update Count
+  uint         ticks_       { 0 };                //!< Update Count
   uint         maxLevels_   { 100 };              //!< Max Levels
   uint         startMoney_  { 20 };               //!< Start Money
   uint         startLives_  { 20 };               //!< State Lives
   uint         level_       { 1 };                //!< Current Level
   uint         levelTicks_  { 100 };              //!< Current Level ticks
-  Weapons      weapons_;                          //!< Weapons
+  Weapons      weapons_;                          //!< Weapon types (cell types)
   CellType     buyCellType_ { CellType::GUN };    //!< Buy Cell Type
   LevelRunners levelRunners_;                     //!< Runners per level
   Annotations  annotations_;                      //!< Annotations
+
+  // draw data
+  Color bgColor_ { 100, 200, 100 }; //!< Bg color
+  Color fgColor_ { 0, 0, 0 };       //!< Fg color
 };
 
 #endif

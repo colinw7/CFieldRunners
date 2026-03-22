@@ -8,15 +8,15 @@ border=crystal
 # char,type,subtype,direction,function,id
 B,border,none
 .,empty,none
-E,empty,none,none,entrance
-e,empty,none,none,exit
+E,empty,none,none,entrance,1
+e,empty,none,none,exit,1
 a,empty,none,none,epath
 X,block,track,n
 Y,block,track,e
 x,empty,track,n
 y,empty,track,e
-Z,empty,track,none,entrance
-z,empty,track,none,exit
+Z,empty,track,none,entrance,2
+z,empty,track,none,exit,2
 \,block,track,ne
 /,block,track,se
 
@@ -39,6 +39,7 @@ BBBBBBBBBBBBBBBBBBBBBBB
 
 # char,runner_type
 S,soldier
+C,cart
 G,mercenary
 H,helicopter
 M,motorbike
@@ -48,7 +49,8 @@ B,heavybike
 gun,glue,missile,shotgun
 
 # level: <runners> (type:entrance:ticks)
-S:1:10,S:1:20
+S:1:10,S:1:40
+C:2:10,C:2:40
 S:1:10,S:1:20,S:1:30,S:1:40,S:1:50
 G:1:10,G:1:20,G:1:30,G:1:40,G:1:50
 S:1:10,S:1:20,S:1:30,S:1:40,S:1:50,S:1:60,S:1:70

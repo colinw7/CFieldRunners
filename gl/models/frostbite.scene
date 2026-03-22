@@ -1,0 +1,59 @@
+Textures
+  models/frostbite.png
+End
+
+Material Green_Material
+  DiffuseTexture 1
+End
+
+Primitive IceHouse
+  Object models/icehouse.obj
+End
+
+Primitive Cube
+  Points
+     0.5  0.5  0.5
+     0.5 -0.5  0.5
+     0.5 -0.5 -0.5
+     0.5  0.5 -0.5
+    -0.5  0.5  0.5
+    -0.5 -0.5  0.5
+    -0.5 -0.5 -0.5
+    -0.5  0.5 -0.5
+  End
+  TexturePoints
+    1 1
+    0 1
+    0 0
+    1 0
+  End
+  Faces
+    1 2 3 4 : T=1,2,3,4 N=1,0,0
+    1 4 8 5 : T=1,2,3,4 N=0,1,0
+    1 5 6 2 : T=1,2,3,4 N=0,0,1
+    3 7 8 4 : T=1,2,3,4 N=0,0,-1
+    2 6 7 3 : T=1,2,3,4 N=0,-1,0
+    5 8 7 6 : T=1,2,3,4 N=-1,0,0
+  End
+End
+
+Object Floor
+  Primitive Cube
+  Material  Green_Material
+  Transforms
+    Scale 23.0 0.01 16.0
+  End
+End
+
+Object IceHouse_1
+  Primitive IceHouse
+  Transforms
+    Center 0.0 0.5 0.0
+    Fit    3.0 3.0 3.0
+  End
+End
+
+Scene
+  Object Floor
+  Object IceHouse_1
+End

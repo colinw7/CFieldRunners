@@ -1,0 +1,45 @@
+Colors
+  red
+  green
+  blue
+  white
+End
+
+Primitive Woman
+  Object gltf/Woman.gltf
+End
+
+Object Woman_1
+  Primitive Woman  
+  Transforms
+    Translate 0.0 0.0 0.0
+  End
+End
+
+Object Woman_2
+  Primitive Woman  
+  Transforms
+    Translate 12.0 0.0 0.0
+  End
+End
+
+Object Woman_3
+  Primitive Woman  
+  Transforms
+    Translate 0.0 12.0 0.0
+  End
+End
+
+Object Woman_4
+  Primitive Woman
+  Transforms
+    Translate 0.0 0.0 12.0
+  End
+End
+
+Scene
+  Object Woman_1
+  Object Woman_2
+  Object Woman_3
+  Object Woman_4
+End

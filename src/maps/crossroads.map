@@ -1,12 +1,13 @@
 # name=value
 nc=23
 nr=16
-bgcolor=100,100,100
+bgcolor=100,200,100
 bg=crossroads
 border=crossroads
 
 # char,type,subtype,direction,function
-B,border,none
+B,border,rock
+b,border,none
 .,empty,none
 E,empty,none,none,entrance,1
 e,empty,none,none,exit,1
@@ -14,19 +15,33 @@ F,empty,none,none,entrance,2
 f,empty,none,none,exit,2
 a,empty,none,none,epath
 
-BBBBBBBBBBBBBBBBBBBBBBB
+BBBBBBBBBBBbBBBBBBBBBBB
 BBBBBBBBBBBFBBBBBBBBBBB
-BBBBBBBBBBBaBBBBBBBBBBB
-BB.........a.........BB
-BB...................BB
-BB...................BB
-BB...................BB
-BB...................BB
+BbbbbbbbbbbabbbbbbbbbbB
+Bb.........a.........bB
+Bb...................bB
+Bb...................bB
+Bb...................bB
+Bb...................bB
 Eaa.................aae
-BB...................BB
-BB...................BB
-BB...................BB
-BB...................BB
-BB.........a.........BB
-BBBBBBBBBBBaBBBBBBBBBBB
+Bb...................bB
+Bb...................bB
+Bb...................bB
+Bb...................bB
+Bb.........a.........bB
+BbbbbbbbbbbabbbbbbbbbbB
 BBBBBBBBBBBfBBBBBBBBBBB
+
+# char,runner_type
+S,soldier
+G,mercenary
+H,helicopter
+M,motorbike
+B,heavybike
+
+# weapons
+gun,glue,missile,zap
+
+# level: <runners> (type:entrance:ticks)
+S:2:10,S:2:40
+S:1:10,S:1:40,S:1:70,S:1:100,S:1:130

@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="512pt"
+   height="512pt"
+   viewBox="0 0 180.62222 180.62222"
+   version="1.1"
+   id="svg135"
+   inkscape:version="1.2.2 (b0a8486541, 2022-12-01)"
+   sodipodi:docname="glue.svg"
+   inkscape:export-filename="glue.png"
+   inkscape:export-xdpi="36"
+   inkscape:export-ydpi="36"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:xlink="http://www.w3.org/1999/xlink"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview137"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:document-units="mm"
+     showgrid="false"
+     inkscape:zoom="1.8004139"
+     inkscape:cx="294.93218"
+     inkscape:cy="354.64067"
+     inkscape:window-width="3840"
+     inkscape:window-height="2319"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="layer1" />
+  <defs
+     id="defs132">
+    <linearGradient
+       inkscape:collect="always"
+       id="linearGradient1024">
+      <stop
+         style="stop-color:#4e8000;stop-opacity:1;"
+         offset="0"
+         id="stop1020" />
+      <stop
+         style="stop-color:#5fab00;stop-opacity:0.50189006;"
+         offset="1"
+         id="stop1022" />
+    </linearGradient>
+    <radialGradient
+       inkscape:collect="always"
+       xlink:href="#linearGradient1024"
+       id="radialGradient1026"
+       cx="98.245712"
+       cy="84.488029"
+       fx="98.245712"
+       fy="84.488029"
+       r="72.870918"
+       gradientTransform="matrix(1.4266013,0.69092485,-0.52334678,1.0805911,3.2377983,-74.7518)"
+       gradientUnits="userSpaceOnUse" />
+  </defs>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1">
+    <path
+       style="fill:url(#radialGradient1026);stroke-width:0.447413px;-inkscape-stroke:none;stop-color:#000000;fill-opacity:1"
+       d="m 58.086492,32.633869 c 7.410077,-10.505681 35.702873,-20.718052 49.655818,-11.8313 13.95295,8.886751 -0.0233,32.057878 10.87701,41.34734 10.90031,9.289462 22.74046,-11.105417 36.95945,5.397169 14.21899,16.502586 4.85419,73.044472 -14.50125,88.291372 C 121.72208,171.08535 94.4039,167.00279 82.873188,151.5483 71.342476,136.09381 101.34807,117.5549 85.965419,104.45222 70.582772,91.349535 53.079063,127.24908 35.646998,118.94579 18.214933,110.6425 12.362818,82.264118 19.96033,69.42885 27.557843,56.593582 50.63199,70.051415 56.797639,62.149943 62.963288,54.248471 50.676416,43.139551 58.086492,32.633869 Z"
+       id="path345"
+       sodipodi:nodetypes="zzzzzzzzzzz" />
+  </g>
+</svg>
