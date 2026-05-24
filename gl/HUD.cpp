@@ -239,11 +239,13 @@ drawGeometry()
 
   //---
 
+#if 0
   auto *camera = canvas_->camera();
 
   // camera projection
   auto projectionMatrix = camera->worldMatrix();
   program->setUniformValue("projection", CQGLUtil::toQMatrix(projectionMatrix));
+#endif
 
   // model matrix
   auto modelMatrix = CMatrix3DH::identity();

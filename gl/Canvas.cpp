@@ -246,6 +246,12 @@ initializeGL()
 
   font_->setSize(48);
   font_->setFontName("OpenSans-Regular.ttf");
+
+  //---
+
+  textureBuffer_.texture = new CQGLTexture;
+
+  textureBuffer_.texture->setFunctions(this);
 }
 
 void
@@ -307,6 +313,15 @@ drawActive()
 
   //---
 
+  if (isBlurScene()) {
+    if (! textureBuffer_.texture->setTarget(pixelWidth(), pixelHeight()))
+      std::cerr << "Set texture shader target failed\n";
+
+    textureBuffer_.texture->bind();
+  }
+
+  //---
+
   glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -315,7 +330,8 @@ drawActive()
 
   glEnable(GL_DEPTH_TEST);
   glEnable(GL_CULL_FACE);
-  //glFrontFace(GL_CW);
+
+//glFrontFace(GL_CW);
   glFrontFace(GL_CCW);
 
   //---
@@ -344,6 +360,113 @@ drawActive()
   drawBullets();
 
   drawHealthBars();
+
+  //---
+
+  if (isBlurScene()) {
+    textureBuffer_.texture->unbind();
+
+    //---
+
+    textureBuffer_.shaderProgram = getShader("texture.vs", "texture.fs");
+
+    if (! textureBuffer_.buffer) {
+      textureBuffer_.buffer = textureBuffer_.shaderProgram->createBuffer();
+
+      textureBuffer_.buffer->clearBuffers();
+
+      textureBuffer_.faceDataList.clear();
+
+      //---
+
+      struct PointData {
+        CPoint2D p;
+        CPoint2D tp;
+
+        PointData() { }
+
+        PointData(const CPoint2D &p1, const CPoint2D &p2) :
+         p(p1), tp(p2) {
+        }
+      };
+
+      auto addPoint = [&](const PointData &p) {
+        textureBuffer_.buffer->addPoint(p.p.x, p.p.y, 0.0);
+        textureBuffer_.buffer->addTexturePoint(p.tp.x, p.tp.y);
+      };
+
+      auto addPolygon = [&](const std::vector<PointData> &points) {
+        FaceData faceData;
+
+        faceData.pos = textureBuffer_.faceDataList.pos;
+        faceData.len = points.size();
+
+        for (const auto &p : points) {
+          addPoint(p);
+        }
+
+        textureBuffer_.faceDataList.faceDatas.push_back(faceData);
+
+        textureBuffer_.faceDataList.pos += faceData.len;
+      };
+
+      auto addRect = [&](const QRectF &rect) {
+        std::vector<PointData> points;
+
+        points.push_back(PointData(CPoint2D(rect.left (), rect.top   ()), CPoint2D(0, 0)));
+        points.push_back(PointData(CPoint2D(rect.right(), rect.top   ()), CPoint2D(1, 0)));
+        points.push_back(PointData(CPoint2D(rect.right(), rect.bottom()), CPoint2D(1, 1)));
+        points.push_back(PointData(CPoint2D(rect.left (), rect.bottom()), CPoint2D(0, 1)));
+
+        addPolygon(points);
+      };
+
+      addRect(QRectF(-1, -1, 2, 2));
+
+      textureBuffer_.buffer->load();
+    }
+
+    //---
+
+    glDisable(GL_DEPTH_TEST);
+
+    textureBuffer_.shaderProgram->bind();
+
+    //---
+
+    // model matrix
+    auto modelMatrix = CMatrix3DH::identity();
+    textureBuffer_.shaderProgram->setUniformValue("model", CQGLUtil::toQMatrix(modelMatrix));
+
+    textureBuffer_.shaderProgram->setUniformValue("textureId", 0);
+
+    //---
+
+    textureBuffer_.buffer->bind();
+
+    glEnable(GL_TEXTURE_2D);
+    glActiveTexture(GL_TEXTURE0);
+
+    textureBuffer_.texture->bindBuffer();
+
+    for (const auto &faceData : textureBuffer_.faceDataList.faceDatas) {
+      glDrawArrays(GL_TRIANGLE_FAN, faceData.pos, faceData.len);
+    }
+
+    textureBuffer_.texture->unbindBuffer();
+
+    glDisable(GL_TEXTURE_2D);
+
+    textureBuffer_.buffer->unbind();
+
+    //---
+
+    textureBuffer_.shaderProgram->release();
+
+    glEnable(GL_DEPTH_TEST);
+  }
+
+  //---
 
   drawHUD();
 
@@ -3928,6 +4051,8 @@ tickSlot()
 
   for (auto *animObject : getAnimObjects())
     animObject->stepAnimTime();
+
+  invalidateNodeMatrices();
 
   updateObjDatas();
 

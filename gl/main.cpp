@@ -13,16 +13,20 @@ main(int argc, char **argv)
   CQImage::setPrototype();
 
   std::string initMap;
+  bool        blur { false };
 
   for (int i = 1; i < argc; ++i) {
     if (argv[i][0] == '-') {
       auto arg = std::string(&argv[i][1]);
 
-      if (arg == "map") {
+      if      (arg == "map") {
         ++i;
 
         if (i < argc)
           initMap = argv[i];
+      }
+      else if (arg == "blur") {
+        blur = true;
       }
       else
         std::cerr << "Invalid arg '" << argv[i] << "'\n";
@@ -33,6 +37,8 @@ main(int argc, char **argv)
 
   if (initMap != "")
     app->canvas()->setInitMap(initMap);
+
+  app->canvas()->setBlurScene(blur);
 
   app->init();
 

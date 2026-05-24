@@ -111,6 +111,9 @@ class Canvas : public QGLWidget, public QOpenGLExtraFunctions {
 
   bool isTextured() const { return true; }
 
+  bool isBlurScene() const { return blurScene_; }
+  void setBlurScene(bool b) { blurScene_ = b; }
+
   //---
 
   void initializeGL() override;
@@ -417,6 +420,13 @@ class Canvas : public QGLWidget, public QOpenGLExtraFunctions {
 
   using ObjectMeshDataMap = std::map<CGeomObject3D *, ObjectMeshData>;
 
+  struct TextureBuffer {
+    CQGLTexture*   texture       { nullptr };
+    ShaderProgram* shaderProgram { nullptr };
+    CQGLBuffer*    buffer        { nullptr };
+    FaceDataList   faceDataList;
+  };
+
   //---
 
   App* app_ { nullptr };
@@ -456,6 +466,8 @@ class Canvas : public QGLWidget, public QOpenGLExtraFunctions {
   QTimer* timer_ { nullptr };
 
   std::string initMap_ { "grasslands.map" };
+
+  bool blurScene_ { false };
 
   //---
 
@@ -578,6 +590,10 @@ class Canvas : public QGLWidget, public QOpenGLExtraFunctions {
 
   ObjectNodeMatrices objectNodeMatrices_;
   bool               objectNodeMatricesValid_ { false };
+
+  //---
+
+  TextureBuffer textureBuffer_;
 };
 
 }
