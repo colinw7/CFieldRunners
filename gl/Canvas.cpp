@@ -4273,7 +4273,7 @@ createFontTexture(uint *texture, int w, int h, uchar *data)
 
   //---
 
-  #if 0
+#if 0
   // dump font to png
   auto src = CImageNoSrc();
 
